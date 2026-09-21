@@ -46,3 +46,6 @@
 
 # Widget Preview related
 /app/.widget_preview/
+
+/docs/*.docx
+/docs/*.dotx
