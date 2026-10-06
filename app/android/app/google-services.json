@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1084769880827",
+    "project_id": "champions-ring-app",
+    "storage_bucket": "champions-ring-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1084769880827:android:1ae050c932e436bffc7e5e",
+        "android_client_info": {
+          "package_name": "com.example.champions_ring_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDEPPgPp-vKi47VFn32pD6A3CxLQxN38Q4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
