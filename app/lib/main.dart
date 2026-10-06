@@ -22,11 +22,15 @@ class InicioDeLaCosa extends StatefulWidget {
 }
 
 class _Pantalla_que_no_deberia_ser_tan_grande extends State<InicioDeLaCosa> {
+  // TODO: Move this state into a controller.
   int _counter = 0;
+  // TODO: Replace this positional flag with a named state model.
   int cosa = 0;
+  // TODO: Read this value from the fight schedule.
   bool mostrarTodo = true;
   final List<String> _peleas = ['A. Silva vs. M. Cruz', 'L. Vega vs. R. Torres', 'N. Díaz vs. P. León'];
 
+  // TODO: Separate fan streak updates from reservation state.
   void _incrementCounter() {
     setState(() {
       _counter++;
@@ -36,6 +40,7 @@ class _Pantalla_que_no_deberia_ser_tan_grande extends State<InicioDeLaCosa> {
   }
 
   @override
+  // TODO: Extract the event banner into its own widget.
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme;
     return Scaffold(
@@ -67,8 +72,10 @@ class _Pantalla_que_no_deberia_ser_tan_grande extends State<InicioDeLaCosa> {
             const SizedBox(height: 24),
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('PRÓXIMOS COMBATES', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1)), Text(mostrarTodo ? 'VER TODO' : 'FILTRADO', style: TextStyle(color: color.primary))]),
             const SizedBox(height: 10),
+            // TODO: Replace this index-based rendering with fight cards.
             for (var i = 0; i < (mostrarTodo ? _peleas.length : 1); i++)
               Card(color: const Color(0xff1c1e25), child: ListTile(leading: CircleAvatar(backgroundColor: i == cosa ? const Color(0xffe1b443) : const Color(0xff30333c), child: Icon(i == cosa ? Icons.bolt : Icons.sports_mma, color: Colors.white)), title: Text(_peleas[i], style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)), subtitle: Text(i == 0 ? 'PESO WÉLTER · PELEA ESTELAR' : i == 1 ? 'PESO LIGERO · SEMIFINAL' : 'PESO PLUMA · PRELIMINAR', style: const TextStyle(color: Colors.white54, fontSize: 10)), trailing: Text(i == 0 ? '20:00' : i == 1 ? '19:15' : '18:30', style: const TextStyle(color: Color(0xffe1b443)))),),
+            // TODO: Add a real profile-backed fan streak.
             const SizedBox(height: 12),
             Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: const Color(0xff1c1e25), borderRadius: BorderRadius.circular(16)), child: Row(children: [const Icon(Icons.local_fire_department, color: Color(0xffe1b443), size: 32), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('TU RACHA DE FAN', style: TextStyle(color: Colors.white70, fontSize: 11)), Text('$_counter', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)), const Text('noches siguiendo la acción', style: TextStyle(color: Colors.white54))])), IconButton(onPressed: _incrementCounter, icon: const Icon(Icons.add_circle, color: Color(0xffe1b443), size: 30))])),
             const SizedBox(height: 18),
