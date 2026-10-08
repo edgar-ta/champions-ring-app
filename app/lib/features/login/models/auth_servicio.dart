@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 
-import 'credenciales_login.dart';
+import 'login_credentials.dart';
 
 class AuthException implements Exception {
   final String mensaje;
@@ -15,11 +15,11 @@ class AuthServicio {
 
   final FirebaseAuth _auth;
 
-  Future<User> iniciarSesion(CredencialesLogin c) async {
+  Future<User> iniciarSesion(LoginCredentials c) async {
     try {
       final cred = await _auth.signInWithEmailAndPassword(
-        email: c.correo.trim(),
-        password: c.contrasena,
+        email: c.email.trim(),
+        password: c.password,
       );
       return cred.user!;
     } on FirebaseAuthException catch (e) {

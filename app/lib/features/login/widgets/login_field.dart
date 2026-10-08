@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class CampoLogin extends StatelessWidget {
-  const CampoLogin({
+class LoginField extends StatelessWidget {
+  const LoginField({
     super.key,
     required this.etiqueta,
     required this.controller,
@@ -64,8 +64,10 @@ class CampoLogin extends StatelessWidget {
             fillColor: Colors.white,
             prefixIcon: Icon(icono, color: const Color(0xFF6B6B6B), size: 20),
             suffixIcon: sufijo,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 16,
+            ),
             border: borde(),
             enabledBorder: borde(),
             focusedBorder: borde(const Color(0xFFFF2D3F)),

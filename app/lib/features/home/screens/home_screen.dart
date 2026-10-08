@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../login/screens/login_screen.dart';
-import '../../registro/widgets/registro_form.dart' show kRojo;
+import '../../signup/widgets/registro_form.dart' show kRojo;
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -50,7 +50,9 @@ class HomeScreen extends StatelessWidget {
                     foregroundColor: const Color(0xFF1A1A1A),
                     side: const BorderSide(color: Color(0xFFE3E3E3)),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 28, vertical: 14),
+                      horizontal: 28,
+                      vertical: 14,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -58,7 +60,9 @@ class HomeScreen extends StatelessWidget {
                   child: const Text(
                     'CERRAR SESIÓN',
                     style: TextStyle(
-                        fontWeight: FontWeight.w700, letterSpacing: 0.8),
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.8,
+                    ),
                   ),
                 ),
               ],
