@@ -47,5 +47,10 @@
 # Widget Preview related
 /app/.widget_preview/
 
-/docs/*.docx
-/docs/*.dotx
+/docs/**/*.docx
+/docs/**/*.dotx
+/docs/**/*.pdf
+/docs/**/*.mp4
+/docs/**/*.m4a
+
+.env
