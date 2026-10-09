@@ -53,5 +53,3 @@
 /docs/**/*.mp4
 /docs/**/*.m4a
 /docs/**/*.svg
-
-.env
