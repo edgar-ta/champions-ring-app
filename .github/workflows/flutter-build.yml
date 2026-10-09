@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - main
+      - development
 
 permissions:
   contents: read
@@ -37,3 +38,23 @@ jobs:
 
       - name: Build Android APK
         run: flutter build apk --debug
+
+      - name: Notify Discord on failure
+        if: failure()
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK_URL" ]; then
+            echo "DISCORD_WEBHOOK_URL is not configured; skipping Discord notification."
+            exit 0
+          fi
+
+          MESSAGE="❌ Flutter build failed for ${GITHUB_REPOSITORY} on branch ${BRANCH}. Run: ${RUN_URL}"
+          PAYLOAD=$(jq -n --arg content "$MESSAGE" '{content: $content}')
+          curl --fail-with-body --silent --show-error \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD" \
+            "$DISCORD_WEBHOOK_URL"
+        
