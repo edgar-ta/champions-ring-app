@@ -2,7 +2,8 @@ name: Flutter build
 
 on:
   push: 
-    branches: development
+    branches: 
+      - development
   pull_request:
     branches:
       - main
