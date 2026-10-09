@@ -54,22 +54,3 @@ Para construir la version web:
 ```bash
 flutter build web
 ```
-
-## Verificaciones del CI
-
-Cada pull request dirigido a `main` ejecuta automaticamente:
-
-- Instalacion de dependencias con `flutter pub get`.
-- Analisis estatico con `flutter analyze`.
-- Pruebas con `flutter test`.
-- Construccion de un APK Android con `flutter build apk --debug`.
-
-El workflow se encuentra en
-`.github/workflows/flutter-build.yml`.
-
-## Enlaces del proyecto
-
-- [Board de Jira](https://snackup.atlassian.net/jira/software/projects/CRA/boards/68?filter=&groupBy=none&atlOrigin=eyJpIjoiMjNkOGMxOTY2Yjk4NGMxNTg0ODFkYjQ3MzllZGVkMjAiLCJwIjoiaiJ9)
-- [Plan de DevOps](https://docs.google.com/document/d/1PH2tMsaNsHezSp0vCosoqWtB99lgMsKbugBkHyg_Iy8/edit?usp=drive_link)
-- [Pull requests](https://github.com/edgar-ta/champions-ring-app/pulls)
-- [Issues](https://github.com/edgar-ta/champions-ring-app/issues)
