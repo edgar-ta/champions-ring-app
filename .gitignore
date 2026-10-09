@@ -56,3 +56,4 @@
 /docs/**/*.jpeg
 /docs/**/*.png
 /docs/**/*.svg
+.env
