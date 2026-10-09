@@ -1,6 +1,10 @@
 name: Flutter build
 
 on:
+  push: 
+    branches: 
+      - main
+      - development
   pull_request:
     branches:
       - main
@@ -57,4 +61,4 @@ jobs:
             -H "Content-Type: application/json" \
             -d "$PAYLOAD" \
             "$DISCORD_WEBHOOK_URL"
-        
+
