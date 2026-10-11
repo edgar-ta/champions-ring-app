@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../widgets/lienzo_firma.dart';
-import '../widgets/registro_form.dart' show kRojo;
-import '../widgets/registro_pagina.dart';
+import '../widgets/signature_canvas.dart';
+import '../widgets/personal_data_form.dart' show kRojo;
+import '../widgets/registration_scaffold.dart';
 
 /// Pantalla "Firma digital". Al confirmar devuelve la firma como PNG
 /// (Uint8List) con Navigator.pop; al cancelar devuelve null.
@@ -14,7 +14,7 @@ class SignWaiverScreen extends StatefulWidget {
 }
 
 class _SignWaiverScreenState extends State<SignWaiverScreen> {
-  final _ctrl = ControladorFirma();
+  final _ctrl = SignatureController();
   bool _isDrawing = false;
 
   @override
@@ -24,28 +24,28 @@ class _SignWaiverScreenState extends State<SignWaiverScreen> {
   }
 
   Future<void> _confirmSignature() async {
-    if (_ctrl.vacio) {
+    if (_ctrl.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Dibuja tu firma para continuar')),
       );
       return;
     }
-    final bytes = await _ctrl.exportarPng();
+    final bytes = await _ctrl.exportPng();
     if (!mounted) return;
     Navigator.of(context).pop(bytes);
   }
 
   @override
   Widget build(BuildContext context) {
-    return RegistroPagina(
-      paso: 4,
-      nombrePaso: 'Responsiva',
-      siguiente: 'Finalizar',
-      tituloCabecera: 'FIRMA DIGITAL',
-      titulo: 'Firma digital',
-      subtitulo: 'Por favor dibuja tu firma con el dedo en el espacio indicado para autorizar legalmente tu responsiva escolar.',
-      sinPie: true,
-      bloquearScroll: _isDrawing,
+    return RegistrationScaffold(
+      stepIndex: 4,
+      stepName: 'Responsiva',
+      nextStepName: 'Finalizar',
+      headerTitle: 'FIRMA DIGITAL',
+      title: 'Firma digital',
+      subtitle: 'Por favor dibuja tu firma con el dedo en el espacio indicado para autorizar legalmente tu responsiva escolar.',
+      showFooter: true,
+      blockScrolling: _isDrawing,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -61,7 +61,7 @@ class _SignWaiverScreenState extends State<SignWaiverScreen> {
                 ),
               ),
               TextButton.icon(
-                onPressed: _ctrl.limpiar,
+                onPressed: _ctrl.clear,
                 style: TextButton.styleFrom(
                   padding: EdgeInsets.zero,
                   minimumSize: Size.zero,
@@ -80,9 +80,9 @@ class _SignWaiverScreenState extends State<SignWaiverScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          LienzoFirma(
-            controlador: _ctrl,
-            onDibujando: (v) => setState(() => _isDrawing = v),
+          SignatureCanvas(
+            ctrl: _ctrl,
+            onDrawing: (v) => setState(() => _isDrawing = v),
           ),
           const SizedBox(height: 14),
           Container(
@@ -111,10 +111,10 @@ class _SignWaiverScreenState extends State<SignWaiverScreen> {
             ),
           ),
           const SizedBox(height: 20),
-          BotonRojo(texto: 'CONFIRMAR FIRMA', onPressed: _confirmSignature),
+          RedButton(text: 'CONFIRMAR FIRMA', onPressed: _confirmSignature),
           const SizedBox(height: 12),
-          BotonBlanco(
-            texto: 'CANCELAR',
+          WhiteButton(
+            text: 'CANCELAR',
             onPressed: () => Navigator.of(context).pop(),
           ),
         ],

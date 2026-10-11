@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../models/membership_plan.dart';
-import '../widgets/registro_pagina.dart';
-import '../widgets/tarjeta_membresia.dart';
+import '../widgets/registration_scaffold.dart';
+import '../widgets/membership_card_plan.dart';
 import 'visualize_waiver_screen.dart';
 
 /// Paso 3: elegir la membresía.
@@ -29,24 +29,24 @@ class _SelectMembershipPlanScreenState
 
   @override
   Widget build(BuildContext context) {
-    return RegistroPagina(
-      paso: 3,
-      nombrePaso: 'Membresía',
-      siguiente: 'Responsiva',
-      titulo: 'Elige tu membresía',
-      subtitulo: 'Selecciona la opción de entrenamiento que mejor se adapte a tus metas en el ring.',
+    return RegistrationScaffold(
+      stepIndex: 3,
+      stepName: 'Membresía',
+      nextStepName: 'Responsiva',
+      title: 'Elige tu membresía',
+      subtitle: 'Selecciona la opción de entrenamiento que mejor se adapte a tus metas en el ring.',
       child: Column(
         children: [
           for (final m in memberships) ...[
-            TarjetaMembresia(
-              membresia: m,
-              seleccionada: m.id == _selectedPlan,
+            MembershipPlanCard(
+              membershipPlan: m,
+              isSelected: m.id == _selectedPlan,
               onTap: () => setState(() => _selectedPlan = m.id),
             ),
             const SizedBox(height: 14),
           ],
           const SizedBox(height: 10),
-          BotonRojo(texto: 'CONTINUAR', onPressed: _moveToNextRegistrationStep),
+          RedButton(text: 'CONTINUAR', onPressed: _moveToNextRegistrationStep),
         ],
       ),
     );

@@ -1,24 +1,24 @@
 import 'package:flutter/material.dart';
 
 import '../models/membership_plan.dart';
-import 'registro_form.dart' show kRojo;
+import 'personal_data_form.dart' show kRojo;
 
 /// Tarjeta seleccionable de una membresía (con radio, precio y beneficios).
-class TarjetaMembresia extends StatelessWidget {
-  final MembershipPlan membresia;
-  final bool seleccionada;
+class MembershipPlanCard extends StatelessWidget {
+  final MembershipPlan membershipPlan;
+  final bool isSelected;
   final VoidCallback onTap;
 
-  const TarjetaMembresia({
+  const MembershipPlanCard({
     super.key,
-    required this.membresia,
-    required this.seleccionada,
+    required this.membershipPlan,
+    required this.isSelected,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final acento = seleccionada ? kRojo : const Color(0xFF7A7A7A);
+    final acento = isSelected ? kRojo : const Color(0xFF7A7A7A);
 
     return GestureDetector(
       onTap: onTap,
@@ -27,11 +27,11 @@ class TarjetaMembresia extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: seleccionada ? const Color(0xFFFFF1F1) : Colors.white,
+          color: isSelected ? const Color(0xFFFFF1F1) : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: seleccionada ? kRojo : const Color(0xFFE3E3E3),
-            width: seleccionada ? 1.5 : 1,
+            color: isSelected ? kRojo : const Color(0xFFE3E3E3),
+            width: isSelected ? 1.5 : 1,
           ),
         ),
         child: Column(
@@ -46,32 +46,32 @@ class TarjetaMembresia extends StatelessWidget {
                     vertical: 3,
                   ),
                   decoration: BoxDecoration(
-                    color: seleccionada ? kRojo : const Color(0xFFECECEC),
+                    color: isSelected ? kRojo : const Color(0xFFECECEC),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    membresia.label,
+                    membershipPlan.label,
                     style: TextStyle(
                       fontSize: 9,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 0.5,
-                      color: seleccionada
+                      color: isSelected
                           ? Colors.white
                           : const Color(0xFF555555),
                     ),
                   ),
                 ),
-                _Radio(seleccionado: seleccionada),
+                _RadioButton(isSelected: isSelected),
               ],
             ),
             const SizedBox(height: 10),
             Text(
-              membresia.title,
+              membershipPlan.title,
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 2),
             Text(
-              membresia.validity,
+              membershipPlan.validity,
               style: const TextStyle(fontSize: 12, color: Color(0xFF6B6B6B)),
             ),
             const SizedBox(height: 10),
@@ -80,7 +80,7 @@ class TarjetaMembresia extends StatelessWidget {
               textBaseline: TextBaseline.alphabetic,
               children: [
                 Text(
-                  '\$${membresia.price}',
+                  '\$${membershipPlan.price}',
                   style: const TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w800,
@@ -100,12 +100,12 @@ class TarjetaMembresia extends StatelessWidget {
             const SizedBox(height: 12),
             Divider(
               height: 1,
-              color: seleccionada
+              color: isSelected
                   ? const Color(0xFFF2C4C7)
                   : const Color(0xFFE3E3E3),
             ),
             const SizedBox(height: 12),
-            ...membresia.benefits.map(
+            ...membershipPlan.benefits.map(
               (b) => Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Row(
@@ -130,10 +130,10 @@ class TarjetaMembresia extends StatelessWidget {
   }
 }
 
-class _Radio extends StatelessWidget {
-  final bool seleccionado;
+class _RadioButton extends StatelessWidget {
+  final bool isSelected;
 
-  const _Radio({required this.seleccionado});
+  const _RadioButton({required this.isSelected});
 
   @override
   Widget build(BuildContext context) {
@@ -144,11 +144,11 @@ class _Radio extends StatelessWidget {
         shape: BoxShape.circle,
         color: Colors.white,
         border: Border.all(
-          color: seleccionado ? kRojo : const Color(0xFFBDBDBD),
+          color: isSelected ? kRojo : const Color(0xFFBDBDBD),
           width: 2,
         ),
       ),
-      child: seleccionado
+      child: isSelected
           ? Center(
               child: Container(
                 width: 10,

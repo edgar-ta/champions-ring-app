@@ -9,42 +9,42 @@ import '../models/user_form_data.dart';
 const Color kRojo = Color(0xFFEA3A3F);
 const Color _gris = Color(0xFF6B6B6B);
 
-class RegistroForm extends StatefulWidget {
+class PersonalDataForm extends StatefulWidget {
   final void Function(UserFormData usuario) onSubmit;
 
-  const RegistroForm({super.key, required this.onSubmit});
+  const PersonalDataForm({super.key, required this.onSubmit});
 
   @override
-  State<RegistroForm> createState() => _RegistroFormState();
+  State<PersonalDataForm> createState() => _PersonalDataFormState();
 }
 
-class _RegistroFormState extends State<RegistroForm> {
+class _PersonalDataFormState extends State<PersonalDataForm> {
   final _formKey = GlobalKey<FormState>();
-  final _nombreCtrl = TextEditingController();
-  final _fechaCtrl = TextEditingController();
-  final _correoCtrl = TextEditingController();
-  final _telefonoCtrl = TextEditingController();
+  final _nameCtrl = TextEditingController();
+  final _dateCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
-  final _confirmCtrl = TextEditingController();
+  final _passwordConfirmationCtrl = TextEditingController();
 
   final _picker = ImagePicker();
-  Uint8List? _fotoBytes;
-  DateTime? _fechaNacimiento;
-  bool _verPassword = false;
-  bool _verConfirm = false;
+  Uint8List? _photoBytes;
+  DateTime? _birthDate;
+  bool _seePassword = false;
+  bool _seePasswordConfirmation = false;
 
   @override
   void dispose() {
-    _nombreCtrl.dispose();
-    _fechaCtrl.dispose();
-    _correoCtrl.dispose();
-    _telefonoCtrl.dispose();
+    _nameCtrl.dispose();
+    _dateCtrl.dispose();
+    _emailCtrl.dispose();
+    _phoneCtrl.dispose();
     _passwordCtrl.dispose();
-    _confirmCtrl.dispose();
+    _passwordConfirmationCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _elegirFoto() async {
+  Future<void> _pickPhoto() async {
     final imagen = await _picker.pickImage(
       source: ImageSource.gallery,
       maxWidth: 1080,
@@ -52,21 +52,21 @@ class _RegistroFormState extends State<RegistroForm> {
     );
     if (imagen == null) return;
     final bytes = await imagen.readAsBytes();
-    setState(() => _fotoBytes = bytes);
+    setState(() => _photoBytes = bytes);
   }
 
-  Future<void> _elegirFecha() async {
+  Future<void> _pickBirthDate() async {
     final hoy = DateTime.now();
     final fecha = await showDatePicker(
       context: context,
-      initialDate: _fechaNacimiento ?? DateTime(hoy.year - 18),
+      initialDate: _birthDate ?? DateTime(hoy.year - 18),
       firstDate: DateTime(1900),
       lastDate: hoy,
     );
     if (fecha != null) {
       setState(() {
-        _fechaNacimiento = fecha;
-        _fechaCtrl.text =
+        _birthDate = fecha;
+        _dateCtrl.text =
             '${fecha.day.toString().padLeft(2, '0')} / ${fecha.month.toString().padLeft(2, '0')} / ${fecha.year}';
       });
     }
@@ -74,7 +74,7 @@ class _RegistroFormState extends State<RegistroForm> {
 
   /// "Juan Pérez Alcedo" -> nombre "Juan", apellidos "Pérez Alcedo".
   /// Con 3 o más palabras, las dos últimas se toman como apellidos.
-  ({String nombre, String apellidos}) _separarNombre(String completo) {
+  ({String nombre, String apellidos}) _separateName(String completo) {
     final p = completo.trim().split(RegExp(r'\s+'));
     if (p.length == 2) return (nombre: p[0], apellidos: p[1]);
     final n = p.length - 2;
@@ -84,45 +84,48 @@ class _RegistroFormState extends State<RegistroForm> {
     );
   }
 
-  void _enviar() {
+  void _submit() {
     if (!_formKey.currentState!.validate()) return;
-    final nombre = _separarNombre(_nombreCtrl.text);
+    final nombre = _separateName(_nameCtrl.text);
 
     widget.onSubmit(
       UserFormData(
         name: nombre.nombre,
         lastName: nombre.apellidos,
-        birthDate: _fechaNacimiento!,
-        email: _correoCtrl.text.trim(),
-        phone: _telefonoCtrl.text.trim(),
+        birthDate: _birthDate!,
+        email: _emailCtrl.text.trim(),
+        phone: _phoneCtrl.text.trim(),
         password: _passwordCtrl.text,
-        photoBytes: _fotoBytes,
+        photoBytes: _photoBytes,
       ),
     );
   }
 
   // ---------- estilos ----------
-  OutlineInputBorder _borde(Color color) => OutlineInputBorder(
+  OutlineInputBorder _buildInputBorder(Color color) => OutlineInputBorder(
     borderRadius: BorderRadius.circular(12),
     borderSide: BorderSide(color: color),
   );
 
-  InputDecoration _deco(String hint, IconData icono, {Widget? sufijo}) =>
-      InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: Color(0xFF8A8A8A), fontSize: 14),
-        prefixIcon: Icon(icono, color: const Color(0xFF555555), size: 20),
-        suffixIcon: sufijo,
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(vertical: 16),
-        enabledBorder: _borde(const Color(0xFFE3E3E3)),
-        focusedBorder: _borde(kRojo),
-        errorBorder: _borde(Colors.red.shade700),
-        focusedErrorBorder: _borde(Colors.red.shade700),
-      );
+  InputDecoration _buildInputDecoration(
+    String hint,
+    IconData icono, {
+    Widget? sufijo,
+  }) => InputDecoration(
+    hintText: hint,
+    hintStyle: const TextStyle(color: Color(0xFF8A8A8A), fontSize: 14),
+    prefixIcon: Icon(icono, color: const Color(0xFF555555), size: 20),
+    suffixIcon: sufijo,
+    filled: true,
+    fillColor: Colors.white,
+    contentPadding: const EdgeInsets.symmetric(vertical: 16),
+    enabledBorder: _buildInputBorder(const Color(0xFFE3E3E3)),
+    focusedBorder: _buildInputBorder(kRojo),
+    errorBorder: _buildInputBorder(Colors.red.shade700),
+    focusedErrorBorder: _buildInputBorder(Colors.red.shade700),
+  );
 
-  Widget _campo(String etiqueta, Widget campo) => Padding(
+  Widget _buildInputField(String etiqueta, Widget campo) => Padding(
     padding: const EdgeInsets.only(bottom: 18),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -141,14 +144,15 @@ class _RegistroFormState extends State<RegistroForm> {
     ),
   );
 
-  Widget _ojo(bool visible, VoidCallback onTap) => IconButton(
-    icon: Icon(
-      visible ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-      color: _gris,
-      size: 20,
-    ),
-    onPressed: onTap,
-  );
+  Widget _buildVisibilityIndicator(bool visible, VoidCallback onTap) =>
+      IconButton(
+        icon: Icon(
+          visible ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+          color: _gris,
+          size: 20,
+        ),
+        onPressed: onTap,
+      );
 
   // ---------- UI ----------
   @override
@@ -158,14 +162,17 @@ class _RegistroFormState extends State<RegistroForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _campo('Fotografía del estudiante', _cajaFoto()),
+          _buildInputField('Fotografía del estudiante', _buildImageInput()),
 
-          _campo(
+          _buildInputField(
             'Nombre completo',
             TextFormField(
-              controller: _nombreCtrl,
+              controller: _nameCtrl,
               textCapitalization: TextCapitalization.words,
-              decoration: _deco('Juan Pérez Alcedo', Icons.person_outline),
+              decoration: _buildInputDecoration(
+                'Juan Pérez Alcedo',
+                Icons.person_outline,
+              ),
               validator: (v) {
                 if (v == null || v.trim().isEmpty) return 'Campo requerido';
                 if (v.trim().split(RegExp(r'\s+')).length < 2) {
@@ -176,18 +183,18 @@ class _RegistroFormState extends State<RegistroForm> {
             ),
           ),
 
-          _campo(
+          _buildInputField(
             'Fecha de nacimiento',
             TextFormField(
-              controller: _fechaCtrl,
+              controller: _dateCtrl,
               readOnly: true,
-              onTap: _elegirFecha,
-              decoration: _deco(
+              onTap: _pickBirthDate,
+              decoration: _buildInputDecoration(
                 'DD / MM / AAAA',
                 Icons.calendar_today_outlined,
               ),
               validator: (_) =>
-                  _fechaNacimiento == null ? 'Selecciona una fecha' : null,
+                  _birthDate == null ? 'Selecciona una fecha' : null,
             ),
           ),
 
@@ -219,12 +226,15 @@ class _RegistroFormState extends State<RegistroForm> {
             ),
           ),
 
-          _campo(
+          _buildInputField(
             'Correo electrónico',
             TextFormField(
-              controller: _correoCtrl,
+              controller: _emailCtrl,
               keyboardType: TextInputType.emailAddress,
-              decoration: _deco('tu-correo@ejemplo.com', Icons.mail_outline),
+              decoration: _buildInputDecoration(
+                'tu-correo@ejemplo.com',
+                Icons.mail_outline,
+              ),
               validator: (v) {
                 if (v == null || v.trim().isEmpty) return 'Campo requerido';
                 if (!v.contains('@') || !v.contains('.'))
@@ -234,16 +244,19 @@ class _RegistroFormState extends State<RegistroForm> {
             ),
           ),
 
-          _campo(
+          _buildInputField(
             'Número de teléfono',
             TextFormField(
-              controller: _telefonoCtrl,
+              controller: _phoneCtrl,
               keyboardType: TextInputType.phone,
               inputFormatters: [
                 FilteringTextInputFormatter.digitsOnly,
                 LengthLimitingTextInputFormatter(10),
               ],
-              decoration: _deco('10 dígitos', Icons.phone_outlined),
+              decoration: _buildInputDecoration(
+                '10 dígitos',
+                Icons.phone_outlined,
+              ),
               validator: (v) {
                 if (v == null || v.trim().isEmpty) return 'Campo requerido';
                 if (v.trim().length != 10) return 'Debe tener 10 dígitos';
@@ -252,17 +265,17 @@ class _RegistroFormState extends State<RegistroForm> {
             ),
           ),
 
-          _campo(
+          _buildInputField(
             'Contraseña',
             TextFormField(
               controller: _passwordCtrl,
-              obscureText: !_verPassword,
-              decoration: _deco(
+              obscureText: !_seePassword,
+              decoration: _buildInputDecoration(
                 'Crea una contraseña segura',
                 Icons.lock_outline,
-                sufijo: _ojo(
-                  _verPassword,
-                  () => setState(() => _verPassword = !_verPassword),
+                sufijo: _buildVisibilityIndicator(
+                  _seePassword,
+                  () => setState(() => _seePassword = !_seePassword),
                 ),
               ),
               validator: (v) {
@@ -273,17 +286,19 @@ class _RegistroFormState extends State<RegistroForm> {
             ),
           ),
 
-          _campo(
+          _buildInputField(
             'Confirmar contraseña',
             TextFormField(
-              controller: _confirmCtrl,
-              obscureText: !_verConfirm,
-              decoration: _deco(
+              controller: _passwordConfirmationCtrl,
+              obscureText: !_seePasswordConfirmation,
+              decoration: _buildInputDecoration(
                 'Repite tu contraseña anterior',
                 Icons.lock_outline,
-                sufijo: _ojo(
-                  _verConfirm,
-                  () => setState(() => _verConfirm = !_verConfirm),
+                sufijo: _buildVisibilityIndicator(
+                  _seePasswordConfirmation,
+                  () => setState(
+                    () => _seePasswordConfirmation = !_seePasswordConfirmation,
+                  ),
                 ),
               ),
               validator: (v) {
@@ -300,7 +315,7 @@ class _RegistroFormState extends State<RegistroForm> {
             width: double.infinity,
             height: 52,
             child: ElevatedButton(
-              onPressed: _enviar,
+              onPressed: _submit,
               style: ElevatedButton.styleFrom(
                 backgroundColor: kRojo,
                 foregroundColor: Colors.white,
@@ -323,11 +338,11 @@ class _RegistroFormState extends State<RegistroForm> {
     );
   }
 
-  Widget _cajaFoto() {
+  Widget _buildImageInput() {
     return GestureDetector(
-      onTap: _elegirFoto,
+      onTap: _pickPhoto,
       child: CustomPaint(
-        painter: _BordeDiscontinuo(),
+        painter: _DiscontinuousBorderPainter(),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
@@ -338,10 +353,10 @@ class _RegistroFormState extends State<RegistroForm> {
                   CircleAvatar(
                     radius: 32,
                     backgroundColor: const Color(0xFFE0E0E0),
-                    backgroundImage: _fotoBytes != null
-                        ? MemoryImage(_fotoBytes!)
+                    backgroundImage: _photoBytes != null
+                        ? MemoryImage(_photoBytes!)
                         : null,
-                    child: _fotoBytes == null
+                    child: _photoBytes == null
                         ? const Icon(
                             Icons.person,
                             color: Colors.white,
@@ -396,7 +411,7 @@ class _RegistroFormState extends State<RegistroForm> {
 }
 
 /// Fondo gris claro con borde discontinuo y esquinas redondeadas.
-class _BordeDiscontinuo extends CustomPainter {
+class _DiscontinuousBorderPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final rrect = RRect.fromRectAndRadius(

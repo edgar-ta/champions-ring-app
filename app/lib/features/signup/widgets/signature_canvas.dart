@@ -4,30 +4,30 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
 /// Guarda los trazos de la firma y la exporta como PNG (fondo transparente).
-class ControladorFirma extends ChangeNotifier {
-  final List<List<Offset>> _trazos = [];
-  Size tamano = Size.zero;
+class SignatureController extends ChangeNotifier {
+  final List<List<Offset>> _strokes = [];
+  Size size = Size.zero;
 
-  List<List<Offset>> get trazos => _trazos;
-  bool get vacio => _trazos.isEmpty;
+  List<List<Offset>> get strokes => _strokes;
+  bool get isEmpty => _strokes.isEmpty;
 
-  void iniciarTrazo(Offset p) {
-    _trazos.add([p]);
+  void beginStroke(Offset p) {
+    _strokes.add([p]);
     notifyListeners();
   }
 
-  void agregarPunto(Offset p) {
-    if (_trazos.isEmpty) return;
-    _trazos.last.add(p);
+  void addPoint(Offset p) {
+    if (_strokes.isEmpty) return;
+    _strokes.last.add(p);
     notifyListeners();
   }
 
-  void limpiar() {
-    _trazos.clear();
+  void clear() {
+    _strokes.clear();
     notifyListeners();
   }
 
-  static void pintar(Canvas canvas, List<List<Offset>> trazos) {
+  static void paint(Canvas canvas, List<List<Offset>> trazos) {
     final paint = Paint()
       ..color = const Color(0xFF1A1A1A)
       ..strokeWidth = 2.6
@@ -48,30 +48,30 @@ class ControladorFirma extends ChangeNotifier {
     }
   }
 
-  Future<Uint8List?> exportarPng() async {
-    if (vacio || tamano.isEmpty) return null;
+  Future<Uint8List?> exportPng() async {
+    if (isEmpty || size.isEmpty) return null;
     const escala = 2.0;
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
     canvas.scale(escala);
-    pintar(canvas, _trazos);
+    paint(canvas, _strokes);
     final imagen = await recorder.endRecording().toImage(
-          (tamano.width * escala).ceil(),
-          (tamano.height * escala).ceil(),
-        );
+      (size.width * escala).ceil(),
+      (size.height * escala).ceil(),
+    );
     final datos = await imagen.toByteData(format: ui.ImageByteFormat.png);
     return datos?.buffer.asUint8List();
   }
 }
 
 /// Lienzo para dibujar la firma con el dedo.
-class LienzoFirma extends StatelessWidget {
-  final ControladorFirma controlador;
+class SignatureCanvas extends StatelessWidget {
+  final SignatureController ctrl;
 
   /// Avisa cuando el dedo está dibujando (para bloquear el scroll de la página).
-  final ValueChanged<bool>? onDibujando;
+  final ValueChanged<bool>? onDrawing;
 
-  const LienzoFirma({super.key, required this.controlador, this.onDibujando});
+  const SignatureCanvas({super.key, required this.ctrl, this.onDrawing});
 
   @override
   Widget build(BuildContext context) {
@@ -86,27 +86,30 @@ class LienzoFirma extends StatelessWidget {
         borderRadius: BorderRadius.circular(15),
         child: LayoutBuilder(
           builder: (context, c) {
-            controlador.tamano = c.biggest;
+            ctrl.size = c.biggest;
             return Listener(
               behavior: HitTestBehavior.opaque,
               onPointerDown: (e) {
-                onDibujando?.call(true);
-                controlador.iniciarTrazo(e.localPosition);
+                onDrawing?.call(true);
+                ctrl.beginStroke(e.localPosition);
               },
-              onPointerMove: (e) => controlador.agregarPunto(e.localPosition),
-              onPointerUp: (_) => onDibujando?.call(false),
-              onPointerCancel: (_) => onDibujando?.call(false),
+              onPointerMove: (e) => ctrl.addPoint(e.localPosition),
+              onPointerUp: (_) => onDrawing?.call(false),
+              onPointerCancel: (_) => onDrawing?.call(false),
               child: Stack(
                 children: [
                   // Ícono de ayuda mientras no hay firma
                   Positioned.fill(
                     child: IgnorePointer(
                       child: ListenableBuilder(
-                        listenable: controlador,
-                        builder: (_, __) => controlador.vacio
+                        listenable: ctrl,
+                        builder: (_, __) => ctrl.isEmpty
                             ? const Center(
-                                child: Icon(Icons.draw_outlined,
-                                    size: 72, color: Color(0xFFD0D0D0)),
+                                child: Icon(
+                                  Icons.draw_outlined,
+                                  size: 72,
+                                  color: Color(0xFFD0D0D0),
+                                ),
                               )
                             : const SizedBox.shrink(),
                       ),
@@ -124,18 +127,26 @@ class LienzoFirma extends StatelessWidget {
                           SizedBox(
                             height: 1,
                             width: double.infinity,
-                            child: CustomPaint(painter: _LineaPunteada()),
+                            child: CustomPaint(painter: _DottedLinePainter()),
                           ),
                           SizedBox(height: 6),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('Firma aquí',
-                                  style: TextStyle(
-                                      fontSize: 10, color: Color(0xFF8A8A8A))),
-                              Text('X',
-                                  style: TextStyle(
-                                      fontSize: 10, color: Color(0xFF8A8A8A))),
+                              Text(
+                                'Firma aquí',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Color(0xFF8A8A8A),
+                                ),
+                              ),
+                              Text(
+                                'X',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Color(0xFF8A8A8A),
+                                ),
+                              ),
                             ],
                           ),
                         ],
@@ -145,7 +156,7 @@ class LienzoFirma extends StatelessWidget {
                   // Trazos de la firma
                   Positioned.fill(
                     child: IgnorePointer(
-                      child: CustomPaint(painter: _PintorFirma(controlador)),
+                      child: CustomPaint(painter: _SignaturePainter(ctrl)),
                     ),
                   ),
                 ],
@@ -158,22 +169,22 @@ class LienzoFirma extends StatelessWidget {
   }
 }
 
-class _PintorFirma extends CustomPainter {
-  final ControladorFirma controlador;
+class _SignaturePainter extends CustomPainter {
+  final SignatureController ctrl;
 
-  _PintorFirma(this.controlador) : super(repaint: controlador);
+  _SignaturePainter(this.ctrl) : super(repaint: ctrl);
 
   @override
   void paint(Canvas canvas, Size size) =>
-      ControladorFirma.pintar(canvas, controlador.trazos);
+      SignatureController.paint(canvas, ctrl.strokes);
 
   @override
-  bool shouldRepaint(covariant _PintorFirma oldDelegate) =>
-      oldDelegate.controlador != controlador;
+  bool shouldRepaint(covariant _SignaturePainter oldDelegate) =>
+      oldDelegate.ctrl != ctrl;
 }
 
-class _LineaPunteada extends CustomPainter {
-  const _LineaPunteada();
+class _DottedLinePainter extends CustomPainter {
+  const _DottedLinePainter();
 
   @override
   void paint(Canvas canvas, Size size) {

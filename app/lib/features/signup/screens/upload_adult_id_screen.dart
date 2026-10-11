@@ -2,8 +2,8 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
-import '../widgets/registro_pagina.dart';
-import '../widgets/tarjeta_documento.dart';
+import '../widgets/registration_scaffold.dart';
+import '../widgets/document_input.dart';
 import 'select_membership_plan_screen.dart';
 
 /// Paso 2 para mayores de edad: subir su propia INE.
@@ -32,22 +32,22 @@ class _UploadAdultIdScreenState extends State<UploadAdultIdScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return RegistroPagina(
-      paso: 2,
-      nombrePaso: 'Documentos',
-      siguiente: 'Membresías',
-      titulo: 'Datos personales',
-      subtitulo: 'Por favor, sube una imagen clara de tu identificación oficial vigente para validar tu identidad en el sistema escolar.',
+    return RegistrationScaffold(
+      stepIndex: 2,
+      stepName: 'Documentos',
+      nextStepName: 'Membresías',
+      title: 'Datos personales',
+      subtitle: 'Por favor, sube una imagen clara de tu identificación oficial vigente para validar tu identidad en el sistema escolar.',
       child: Column(
         children: [
-          TarjetaDocumento(
-            icono: Icons.photo_camera_outlined,
-            titulo: 'Subir fotografía de INE',
-            descripcion: 'Asegúrate de que la imagen sea legible y tenga buena iluminación.',
-            onSeleccionado: (bytes) => _ineBytes = bytes,
+          DocumentInput(
+            icon: Icons.photo_camera_outlined,
+            title: 'Subir fotografía de INE',
+            description: 'Asegúrate de que la imagen sea legible y tenga buena iluminación.',
+            onDocumentPicked: (bytes) => _ineBytes = bytes,
           ),
           const SizedBox(height: 24),
-          BotonRojo(texto: 'CONTINUAR', onPressed: _moveToNextRegistrationStep),
+          RedButton(text: 'CONTINUAR', onPressed: _moveToNextRegistrationStep),
         ],
       ),
     );

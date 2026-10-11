@@ -3,9 +3,9 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../widgets/registro_form.dart' show kRojo;
-import '../widgets/registro_pagina.dart';
-import '../widgets/tarjeta_documento.dart';
+import '../widgets/personal_data_form.dart' show kRojo;
+import '../widgets/registration_scaffold.dart';
+import '../widgets/document_input.dart';
 import 'select_membership_plan_screen.dart';
 
 /// Paso 2 para menores de edad: datos y documentos del tutor legal.
@@ -132,10 +132,10 @@ class _UploadGuardianIdScreenState extends State<UploadGuardianIdScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return RegistroPagina(
-      paso: 2,
-      nombrePaso: 'Documentos',
-      siguiente: 'Membresías',
+    return RegistrationScaffold(
+      stepIndex: 2,
+      stepName: 'Documentos',
+      nextStepName: 'Membresías',
       child: Form(
         key: _formKey,
         child: Column(
@@ -197,30 +197,30 @@ class _UploadGuardianIdScreenState extends State<UploadGuardianIdScreen> {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 12),
-            TarjetaDocumento(
-              icono: Icons.photo_camera_outlined,
-              titulo: 'Subir fotografía del INE del tutor',
-              descripcion: 'Asegúrate de que la imagen sea legible y tenga buena iluminación.',
-              onSeleccionado: (b) => _guardianIneBytes = b,
+            DocumentInput(
+              icon: Icons.photo_camera_outlined,
+              title: 'Subir fotografía del INE del tutor',
+              description: 'Asegúrate de que la imagen sea legible y tenga buena iluminación.',
+              onDocumentPicked: (b) => _guardianIneBytes = b,
             ),
             const SizedBox(height: 14),
-            TarjetaDocumento(
-              icono: Icons.description_outlined,
-              titulo: 'Fotografía del tutor',
-              descripcion:
+            DocumentInput(
+              icon: Icons.description_outlined,
+              title: 'Fotografía del tutor',
+              description:
                   'Formatos JPG, PNG. Rostro visible sin gorra ni lentes.',
-              onSeleccionado: (b) => _guardianPhotoBytes = b,
+              onDocumentPicked: (b) => _guardianPhotoBytes = b,
             ),
             const SizedBox(height: 14),
-            TarjetaDocumento(
-              icono: Icons.insert_drive_file_outlined,
-              titulo: 'Fotografía del CURP del estudiante',
-              descripcion: 'Formato oficial legible de la clave CURP',
-              onSeleccionado: (b) => _studentCurpBytes = b,
+            DocumentInput(
+              icon: Icons.insert_drive_file_outlined,
+              title: 'Fotografía del CURP del estudiante',
+              description: 'Formato oficial legible de la clave CURP',
+              onDocumentPicked: (b) => _studentCurpBytes = b,
             ),
             const SizedBox(height: 24),
-            BotonRojo(
-              texto: 'CONTINUAR',
+            RedButton(
+              text: 'CONTINUAR',
               onPressed: _moveToNextRegistrationStep,
             ),
           ],

@@ -4,32 +4,32 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-import 'registro_form.dart' show kRojo;
+import 'personal_data_form.dart' show kRojo;
 
 /// Tarjeta para subir un documento. Al elegir la foto muestra una vista
 /// previa y el botón cambia a "CAMBIAR FOTO" (la revisión se hace manualmente).
-class TarjetaDocumento extends StatefulWidget {
-  final IconData icono;
-  final String titulo;
-  final String descripcion;
-  final ValueChanged<Uint8List> onSeleccionado;
+class DocumentInput extends StatefulWidget {
+  final IconData icon;
+  final String title;
+  final String description;
+  final ValueChanged<Uint8List> onDocumentPicked;
 
-  const TarjetaDocumento({
+  const DocumentInput({
     super.key,
-    required this.icono,
-    required this.titulo,
-    required this.descripcion,
-    required this.onSeleccionado,
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.onDocumentPicked,
   });
 
   @override
-  State<TarjetaDocumento> createState() => _TarjetaDocumentoState();
+  State<DocumentInput> createState() => _DocumentInputState();
 }
 
-class _TarjetaDocumentoState extends State<TarjetaDocumento> {
+class _DocumentInputState extends State<DocumentInput> {
   Uint8List? _bytes;
 
-  Future<void> _elegir() async {
+  Future<void> _pickDocument() async {
     ImageSource? fuente = ImageSource.gallery;
 
     // En móvil ofrecemos cámara o galería; en web solo el selector de archivos.
@@ -57,13 +57,16 @@ class _TarjetaDocumentoState extends State<TarjetaDocumento> {
     }
     if (fuente == null) return;
 
-    final imagen = await ImagePicker()
-        .pickImage(source: fuente, maxWidth: 2000, imageQuality: 90);
+    final imagen = await ImagePicker().pickImage(
+      source: fuente,
+      maxWidth: 2000,
+      imageQuality: 90,
+    );
     if (imagen == null) return;
     final bytes = await imagen.readAsBytes();
     if (!mounted) return;
     setState(() => _bytes = bytes);
-    widget.onSeleccionado(bytes);
+    widget.onDocumentPicked(bytes);
   }
 
   @override
@@ -83,8 +86,10 @@ class _TarjetaDocumentoState extends State<TarjetaDocumento> {
               width: 48,
               height: 48,
               decoration: const BoxDecoration(
-                  color: Color(0xFFFFEBEC), shape: BoxShape.circle),
-              child: Icon(widget.icono, color: kRojo, size: 22),
+                color: Color(0xFFFFEBEC),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(widget.icon, color: kRojo, size: 22),
             )
           else
             ClipRRect(
@@ -97,17 +102,24 @@ class _TarjetaDocumentoState extends State<TarjetaDocumento> {
               ),
             ),
           const SizedBox(height: 12),
-          Text(widget.titulo,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+          Text(
+            widget.title,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+          ),
           const SizedBox(height: 6),
-          Text(widget.descripcion,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                  fontSize: 12, color: Color(0xFF6B6B6B), height: 1.3)),
+          Text(
+            widget.description,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFF6B6B6B),
+              height: 1.3,
+            ),
+          ),
           const SizedBox(height: 14),
           ElevatedButton(
-            onPressed: _elegir,
+            onPressed: _pickDocument,
             style: ElevatedButton.styleFrom(
               backgroundColor: kRojo,
               foregroundColor: Colors.white,
@@ -115,12 +127,16 @@ class _TarjetaDocumentoState extends State<TarjetaDocumento> {
               shadowColor: kRojo.withValues(alpha: 0.4),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
             child: Text(
               _bytes == null ? 'SUBIR O TOMAR FOTO' : 'CAMBIAR FOTO',
               style: const TextStyle(
-                  fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.5),
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
+              ),
             ),
           ),
         ],

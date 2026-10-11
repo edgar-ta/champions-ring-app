@@ -6,8 +6,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 import '../models/user_form_data.dart';
-import '../widgets/registro_form.dart';
-import '../widgets/registro_pagina.dart';
+import '../widgets/personal_data_form.dart';
+import '../widgets/registration_scaffold.dart';
 import 'upload_adult_id_screen.dart';
 import 'upload_guardian_id_screen.dart';
 
@@ -94,15 +94,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return RegistroPagina(
-      paso: 1,
-      nombrePaso: 'Datos personales',
-      siguiente: 'Documentos',
-      titulo: 'Datos personales',
-      subtitulo:
+    return RegistrationScaffold(
+      stepIndex: 1,
+      stepName: 'Datos personales',
+      nextStepName: 'Documentos',
+      title: 'Datos personales',
+      subtitle:
           'Introduce tu información para comenzar con tu alta de estudiante.',
-      cargando: _isLoading,
-      child: RegistroForm(onSubmit: _registerUser),
+      isLoading: _isLoading,
+      child: PersonalDataForm(onSubmit: _registerUser),
     );
   }
 }

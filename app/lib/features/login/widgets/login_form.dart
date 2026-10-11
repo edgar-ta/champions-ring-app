@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../signup/widgets/registro_form.dart' show kRojo;
+import '../../signup/widgets/personal_data_form.dart' show kRojo;
 import '../services/auth_service.dart';
 import '../models/login_credentials.dart';
 import 'login_field.dart';

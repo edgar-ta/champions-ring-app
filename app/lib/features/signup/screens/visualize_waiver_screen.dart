@@ -9,8 +9,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 import '../models/liability_waiver.dart';
-import '../widgets/registro_form.dart' show kRojo;
-import '../widgets/registro_pagina.dart';
+import '../widgets/personal_data_form.dart' show kRojo;
+import '../widgets/registration_scaffold.dart';
 import 'sign_waiver_screen.dart';
 
 import '../../login/screens/login_screen.dart';
@@ -198,17 +198,17 @@ class _VisualizeWaiverScreenState extends State<VisualizeWaiverScreen> {
   Widget build(BuildContext context) {
     final hasBeenSigned = _signatureBytes != null;
 
-    return RegistroPagina(
-      paso: 4,
-      cargando: _isSaving,
-      nombrePaso: 'Responsiva',
-      siguiente: 'Finalizar',
-      titulo: 'Carta Responsiva',
-      subtitulo: 'Por favor revisa el documento legal de deslinde de responsabilidad antes de estampar tu firma digital.',
-      pie: const PiePagina(
-        texto: '¿Necesitas ayuda? ',
-        accion: 'Soporte técnico',
-        subrayar: true,
+    return RegistrationScaffold(
+      stepIndex: 4,
+      isLoading: _isSaving,
+      stepName: 'Responsiva',
+      nextStepName: 'Finalizar',
+      title: 'Carta Responsiva',
+      subtitle: 'Por favor revisa el documento legal de deslinde de responsabilidad antes de estampar tu firma digital.',
+      footer: const RegistrationFooter(
+        text: '¿Necesitas ayuda? ',
+        action: 'Soporte técnico',
+        underlineAction: true,
         // TODO: abrir soporte técnico
       ),
       child: Column(
@@ -217,9 +217,9 @@ class _VisualizeWaiverScreenState extends State<VisualizeWaiverScreen> {
           const SizedBox(height: 14),
           _buildLiabilityWaiverFormat(),
           const SizedBox(height: 18),
-          BotonRojo(
-            texto: hasBeenSigned ? 'CAMBIAR FIRMA' : 'FIRMAR DOCUMENTO',
-            icono: Icons.edit_outlined,
+          RedButton(
+            text: hasBeenSigned ? 'CAMBIAR FIRMA' : 'FIRMAR DOCUMENTO',
+            icon: Icons.edit_outlined,
             onPressed: _sign,
           ),
           if (!hasBeenSigned) ...[
@@ -231,8 +231,8 @@ class _VisualizeWaiverScreenState extends State<VisualizeWaiverScreen> {
             ),
           ],
           const SizedBox(height: 14),
-          BotonRojo(
-            texto: 'CONTINUAR',
+          RedButton(
+            text: 'CONTINUAR',
             onPressed: hasBeenSigned ? _saveSignature : null,
           ),
         ],
