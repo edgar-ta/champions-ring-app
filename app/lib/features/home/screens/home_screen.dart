@@ -18,7 +18,7 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final correo = FirebaseAuth.instance.currentUser?.email ?? '';
+    final email = FirebaseAuth.instance.currentUser?.email ?? '';
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -37,7 +37,7 @@ class HomeScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  correo,
+                  email,
                   style: const TextStyle(
                     fontSize: 13,
                     color: Color(0xFF6B6B6B),

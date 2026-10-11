@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../models/membresia.dart';
+import '../models/membership_plan.dart';
 import 'registro_form.dart' show kRojo;
 
 /// Tarjeta seleccionable de una membresía (con radio, precio y beneficios).
 class TarjetaMembresia extends StatelessWidget {
-  final Membresia membresia;
+  final MembershipPlan membresia;
   final bool seleccionada;
   final VoidCallback onTap;
 
@@ -41,14 +41,16 @@ class TarjetaMembresia extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: seleccionada ? kRojo : const Color(0xFFECECEC),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    membresia.etiqueta,
+                    membresia.label,
                     style: TextStyle(
                       fontSize: 9,
                       fontWeight: FontWeight.w800,
@@ -64,12 +66,12 @@ class TarjetaMembresia extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              membresia.titulo,
+              membresia.title,
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 2),
             Text(
-              membresia.vigencia,
+              membresia.validity,
               style: const TextStyle(fontSize: 12, color: Color(0xFF6B6B6B)),
             ),
             const SizedBox(height: 10),
@@ -78,17 +80,20 @@ class TarjetaMembresia extends StatelessWidget {
               textBaseline: TextBaseline.alphabetic,
               children: [
                 Text(
-                  '\$${membresia.precio}',
-                  style:
-                      const TextStyle(fontSize: 28, fontWeight: FontWeight.w800),
+                  '\$${membresia.price}',
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 const SizedBox(width: 4),
                 const Text(
                   'MXN',
                   style: TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF6B6B6B),
-                      fontWeight: FontWeight.w600),
+                    fontSize: 12,
+                    color: Color(0xFF6B6B6B),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
@@ -100,7 +105,7 @@ class TarjetaMembresia extends StatelessWidget {
                   : const Color(0xFFE3E3E3),
             ),
             const SizedBox(height: 12),
-            ...membresia.beneficios.map(
+            ...membresia.benefits.map(
               (b) => Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Row(
@@ -109,8 +114,10 @@ class TarjetaMembresia extends StatelessWidget {
                     Icon(Icons.check_circle, size: 16, color: acento),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(b,
-                          style: const TextStyle(fontSize: 12.5, height: 1.2)),
+                      child: Text(
+                        b,
+                        style: const TextStyle(fontSize: 12.5, height: 1.2),
+                      ),
                     ),
                   ],
                 ),
@@ -146,8 +153,10 @@ class _Radio extends StatelessWidget {
               child: Container(
                 width: 10,
                 height: 10,
-                decoration:
-                    const BoxDecoration(color: kRojo, shape: BoxShape.circle),
+                decoration: const BoxDecoration(
+                  color: kRojo,
+                  shape: BoxShape.circle,
+                ),
               ),
             )
           : null,

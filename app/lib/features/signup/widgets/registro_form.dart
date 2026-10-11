@@ -4,13 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../models/usuario.dart';
+import '../models/user_form_data.dart';
 
 const Color kRojo = Color(0xFFEA3A3F);
 const Color _gris = Color(0xFF6B6B6B);
 
 class RegistroForm extends StatefulWidget {
-  final void Function(Usuario usuario) onSubmit;
+  final void Function(UserFormData usuario) onSubmit;
 
   const RegistroForm({super.key, required this.onSubmit});
 
@@ -78,7 +78,10 @@ class _RegistroFormState extends State<RegistroForm> {
     final p = completo.trim().split(RegExp(r'\s+'));
     if (p.length == 2) return (nombre: p[0], apellidos: p[1]);
     final n = p.length - 2;
-    return (nombre: p.sublist(0, n).join(' '), apellidos: p.sublist(n).join(' '));
+    return (
+      nombre: p.sublist(0, n).join(' '),
+      apellidos: p.sublist(n).join(' '),
+    );
   }
 
   void _enviar() {
@@ -86,23 +89,23 @@ class _RegistroFormState extends State<RegistroForm> {
     final nombre = _separarNombre(_nombreCtrl.text);
 
     widget.onSubmit(
-      Usuario(
+      UserFormData(
         name: nombre.nombre,
         lastName: nombre.apellidos,
         birthDate: _fechaNacimiento!,
         email: _correoCtrl.text.trim(),
         phone: _telefonoCtrl.text.trim(),
         password: _passwordCtrl.text,
-        fotoBytes: _fotoBytes,
+        photoBytes: _fotoBytes,
       ),
     );
   }
 
   // ---------- estilos ----------
   OutlineInputBorder _borde(Color color) => OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: color),
-      );
+    borderRadius: BorderRadius.circular(12),
+    borderSide: BorderSide(color: color),
+  );
 
   InputDecoration _deco(String hint, IconData icono, {Widget? sufijo}) =>
       InputDecoration(
@@ -120,27 +123,32 @@ class _RegistroFormState extends State<RegistroForm> {
       );
 
   Widget _campo(String etiqueta, Widget campo) => Padding(
-        padding: const EdgeInsets.only(bottom: 18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(etiqueta,
-                style: const TextStyle(
-                    fontSize: 13, color: _gris, fontWeight: FontWeight.w500)),
-            const SizedBox(height: 8),
-            campo,
-          ],
+    padding: const EdgeInsets.only(bottom: 18),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          etiqueta,
+          style: const TextStyle(
+            fontSize: 13,
+            color: _gris,
+            fontWeight: FontWeight.w500,
+          ),
         ),
-      );
+        const SizedBox(height: 8),
+        campo,
+      ],
+    ),
+  );
 
   Widget _ojo(bool visible, VoidCallback onTap) => IconButton(
-        icon: Icon(
-          visible ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-          color: _gris,
-          size: 20,
-        ),
-        onPressed: onTap,
-      );
+    icon: Icon(
+      visible ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+      color: _gris,
+      size: 20,
+    ),
+    onPressed: onTap,
+  );
 
   // ---------- UI ----------
   @override
@@ -174,8 +182,10 @@ class _RegistroFormState extends State<RegistroForm> {
               controller: _fechaCtrl,
               readOnly: true,
               onTap: _elegirFecha,
-              decoration:
-                  _deco('DD / MM / AAAA', Icons.calendar_today_outlined),
+              decoration: _deco(
+                'DD / MM / AAAA',
+                Icons.calendar_today_outlined,
+              ),
               validator: (_) =>
                   _fechaNacimiento == null ? 'Selecciona una fecha' : null,
             ),
@@ -199,7 +209,10 @@ class _RegistroFormState extends State<RegistroForm> {
                   child: Text(
                     'Calculamos automáticamente tu mayoría de edad a partir de esta fecha para generar tu formato responsivo legal correspondiente.',
                     style: TextStyle(
-                        fontSize: 12, color: Color(0xFF2B5FB8), height: 1.3),
+                      fontSize: 12,
+                      color: Color(0xFF2B5FB8),
+                      height: 1.3,
+                    ),
                   ),
                 ),
               ],
@@ -214,7 +227,8 @@ class _RegistroFormState extends State<RegistroForm> {
               decoration: _deco('tu-correo@ejemplo.com', Icons.mail_outline),
               validator: (v) {
                 if (v == null || v.trim().isEmpty) return 'Campo requerido';
-                if (!v.contains('@') || !v.contains('.')) return 'Correo inválido';
+                if (!v.contains('@') || !v.contains('.'))
+                  return 'Correo inválido';
                 return null;
               },
             ),
@@ -246,8 +260,10 @@ class _RegistroFormState extends State<RegistroForm> {
               decoration: _deco(
                 'Crea una contraseña segura',
                 Icons.lock_outline,
-                sufijo:
-                    _ojo(_verPassword, () => setState(() => _verPassword = !_verPassword)),
+                sufijo: _ojo(
+                  _verPassword,
+                  () => setState(() => _verPassword = !_verPassword),
+                ),
               ),
               validator: (v) {
                 if (v == null || v.isEmpty) return 'Campo requerido';
@@ -265,12 +281,15 @@ class _RegistroFormState extends State<RegistroForm> {
               decoration: _deco(
                 'Repite tu contraseña anterior',
                 Icons.lock_outline,
-                sufijo:
-                    _ojo(_verConfirm, () => setState(() => _verConfirm = !_verConfirm)),
+                sufijo: _ojo(
+                  _verConfirm,
+                  () => setState(() => _verConfirm = !_verConfirm),
+                ),
               ),
               validator: (v) {
                 if (v == null || v.isEmpty) return 'Campo requerido';
-                if (v != _passwordCtrl.text) return 'Las contraseñas no coinciden';
+                if (v != _passwordCtrl.text)
+                  return 'Las contraseñas no coinciden';
                 return null;
               },
             ),
@@ -287,11 +306,15 @@ class _RegistroFormState extends State<RegistroForm> {
                 foregroundColor: Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               child: const Text(
                 'CONTINUAR',
-                style: TextStyle(fontWeight: FontWeight.w700, letterSpacing: 0.8),
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.8,
+                ),
               ),
             ),
           ),
@@ -315,10 +338,15 @@ class _RegistroFormState extends State<RegistroForm> {
                   CircleAvatar(
                     radius: 32,
                     backgroundColor: const Color(0xFFE0E0E0),
-                    backgroundImage:
-                        _fotoBytes != null ? MemoryImage(_fotoBytes!) : null,
+                    backgroundImage: _fotoBytes != null
+                        ? MemoryImage(_fotoBytes!)
+                        : null,
                     child: _fotoBytes == null
-                        ? const Icon(Icons.person, color: Colors.white, size: 36)
+                        ? const Icon(
+                            Icons.person,
+                            color: Colors.white,
+                            size: 36,
+                          )
                         : null,
                   ),
                   Positioned(
@@ -327,9 +355,14 @@ class _RegistroFormState extends State<RegistroForm> {
                     child: Container(
                       padding: const EdgeInsets.all(5),
                       decoration: const BoxDecoration(
-                          color: kRojo, shape: BoxShape.circle),
-                      child: const Icon(Icons.camera_alt,
-                          color: Colors.white, size: 12),
+                        color: kRojo,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.camera_alt,
+                        color: Colors.white,
+                        size: 12,
+                      ),
                     ),
                   ),
                 ],
@@ -339,12 +372,18 @@ class _RegistroFormState extends State<RegistroForm> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Sube una selfie o foto clara',
-                        style: TextStyle(
-                            fontWeight: FontWeight.w700, fontSize: 14)),
+                    Text(
+                      'Sube una selfie o foto clara',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
+                    ),
                     SizedBox(height: 4),
-                    Text('Formatos JPG, PNG. Rostro visible sin gorra ni lentes.',
-                        style: TextStyle(fontSize: 11, color: _gris)),
+                    Text(
+                      'Formatos JPG, PNG. Rostro visible sin gorra ni lentes.',
+                      style: TextStyle(fontSize: 11, color: _gris),
+                    ),
                   ],
                 ),
               ),
@@ -361,7 +400,9 @@ class _BordeDiscontinuo extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final rrect = RRect.fromRectAndRadius(
-        Offset.zero & size, const Radius.circular(16));
+      Offset.zero & size,
+      const Radius.circular(16),
+    );
     canvas.drawRRect(rrect, Paint()..color = const Color(0xFFF7F7F7));
 
     final paint = Paint()

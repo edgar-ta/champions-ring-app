@@ -3,28 +3,28 @@ import 'package:flutter/material.dart';
 class LoginField extends StatelessWidget {
   const LoginField({
     super.key,
-    required this.etiqueta,
+    required this.label,
     required this.controller,
-    required this.icono,
+    required this.icon,
     this.hint,
-    this.ocultar = false,
-    this.sufijo,
+    this.hideText = false,
+    this.suffix,
     this.validator,
-    this.teclado,
-    this.accion,
+    this.keyboard,
+    this.action,
     this.onSubmitted,
     this.autofillHints,
   });
 
-  final String etiqueta;
+  final String label;
   final TextEditingController controller;
-  final IconData icono;
+  final IconData icon;
   final String? hint;
-  final bool ocultar;
-  final Widget? sufijo;
+  final bool hideText;
+  final Widget? suffix;
   final String? Function(String?)? validator;
-  final TextInputType? teclado;
-  final TextInputAction? accion;
+  final TextInputType? keyboard;
+  final TextInputAction? action;
   final ValueChanged<String>? onSubmitted;
   final Iterable<String>? autofillHints;
 
@@ -40,7 +40,7 @@ class LoginField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          etiqueta,
+          label,
           style: const TextStyle(
             fontSize: 12,
             color: Color(0xFF6B6B6B),
@@ -50,10 +50,10 @@ class LoginField extends StatelessWidget {
         const SizedBox(height: 6),
         TextFormField(
           controller: controller,
-          obscureText: ocultar,
+          obscureText: hideText,
           validator: validator,
-          keyboardType: teclado,
-          textInputAction: accion,
+          keyboardType: keyboard,
+          textInputAction: action,
           onFieldSubmitted: onSubmitted,
           autofillHints: autofillHints,
           style: const TextStyle(fontSize: 14, color: Color(0xFF1A1A1A)),
@@ -62,8 +62,8 @@ class LoginField extends StatelessWidget {
             hintStyle: const TextStyle(color: Color(0xFF9A9A9A)),
             filled: true,
             fillColor: Colors.white,
-            prefixIcon: Icon(icono, color: const Color(0xFF6B6B6B), size: 20),
-            suffixIcon: sufijo,
+            prefixIcon: Icon(icon, color: const Color(0xFF6B6B6B), size: 20),
+            suffixIcon: suffix,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 14,
               vertical: 16,

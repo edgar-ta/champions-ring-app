@@ -4,29 +4,30 @@ import 'package:flutter/material.dart';
 
 import '../widgets/registro_pagina.dart';
 import '../widgets/tarjeta_documento.dart';
-import 'membresia_screen.dart';
+import 'select_membership_plan_screen.dart';
 
 /// Paso 2 para mayores de edad: subir su propia INE.
-class DocumentosAdultoScreen extends StatefulWidget {
-  const DocumentosAdultoScreen({super.key});
+class UploadAdultIdScreen extends StatefulWidget {
+  const UploadAdultIdScreen({super.key});
 
   @override
-  State<DocumentosAdultoScreen> createState() => _DocumentosAdultoScreenState();
+  State<UploadAdultIdScreen> createState() => _UploadAdultIdScreenState();
 }
 
-class _DocumentosAdultoScreenState extends State<DocumentosAdultoScreen> {
-  Uint8List? _ine;
+class _UploadAdultIdScreenState extends State<UploadAdultIdScreen> {
+  Uint8List? _ineBytes;
 
-  void _continuar() {
-    if (_ine == null) {
+  void _moveToNextRegistrationStep() {
+    if (_ineBytes == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Sube la foto de tu INE para continuar')),
       );
       return;
     }
     // TODO: subir _ine al almacenamiento y guardar ine_url en users/{uid}.
-    Navigator.of(context)
-        .push(MaterialPageRoute(builder: (_) => const MembresiaScreen()));
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const SelectMembershipPlanScreen()),
+    );
   }
 
   @override
@@ -36,19 +37,17 @@ class _DocumentosAdultoScreenState extends State<DocumentosAdultoScreen> {
       nombrePaso: 'Documentos',
       siguiente: 'Membresías',
       titulo: 'Datos personales',
-      subtitulo:
-          'Por favor, sube una imagen clara de tu identificación oficial vigente para validar tu identidad en el sistema escolar.',
+      subtitulo: 'Por favor, sube una imagen clara de tu identificación oficial vigente para validar tu identidad en el sistema escolar.',
       child: Column(
         children: [
           TarjetaDocumento(
             icono: Icons.photo_camera_outlined,
             titulo: 'Subir fotografía de INE',
-            descripcion:
-                'Asegúrate de que la imagen sea legible y tenga buena iluminación.',
-            onSeleccionado: (bytes) => _ine = bytes,
+            descripcion: 'Asegúrate de que la imagen sea legible y tenga buena iluminación.',
+            onSeleccionado: (bytes) => _ineBytes = bytes,
           ),
           const SizedBox(height: 24),
-          BotonRojo(texto: 'CONTINUAR', onPressed: _continuar),
+          BotonRojo(texto: 'CONTINUAR', onPressed: _moveToNextRegistrationStep),
         ],
       ),
     );

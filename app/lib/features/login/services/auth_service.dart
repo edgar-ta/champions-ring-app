@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 
-import 'login_credentials.dart';
+import '../models/login_credentials.dart';
 
 class AuthException implements Exception {
   final String mensaje;
@@ -10,34 +10,34 @@ class AuthException implements Exception {
   String toString() => mensaje;
 }
 
-class AuthServicio {
-  AuthServicio({FirebaseAuth? auth}) : _auth = auth ?? FirebaseAuth.instance;
+class AuthService {
+  AuthService({FirebaseAuth? auth}) : _auth = auth ?? FirebaseAuth.instance;
 
   final FirebaseAuth _auth;
 
-  Future<User> iniciarSesion(LoginCredentials c) async {
+  Future<User> logIn(LoginCredentials credentials) async {
     try {
       final cred = await _auth.signInWithEmailAndPassword(
-        email: c.email.trim(),
-        password: c.password,
+        email: credentials.email.trim(),
+        password: credentials.password,
       );
       return cred.user!;
     } on FirebaseAuthException catch (e) {
-      throw AuthException(_traducir(e.code));
+      throw AuthException(_translate(e.code));
     }
   }
 
-  Future<void> recuperarContrasena(String correo) async {
+  Future<void> recoverPassword(String email) async {
     try {
-      await _auth.sendPasswordResetEmail(email: correo.trim());
+      await _auth.sendPasswordResetEmail(email: email.trim());
     } on FirebaseAuthException catch (e) {
-      throw AuthException(_traducir(e.code));
+      throw AuthException(_translate(e.code));
     }
   }
 
-  Future<void> cerrarSesion() => _auth.signOut();
+  Future<void> logOut() => _auth.signOut();
 
-  String _traducir(String code) {
+  String _translate(String code) {
     switch (code) {
       case 'invalid-email':
         return 'El correo electrónico no es válido.';

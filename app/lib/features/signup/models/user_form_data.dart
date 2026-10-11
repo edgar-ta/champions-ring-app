@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class Usuario {
+class UserFormData {
   final String name;
   final String lastName;
   final String type; // "owner" | "member" | "receptionist"
@@ -11,9 +11,9 @@ class Usuario {
   final String phone;
   final bool legalDataAreTheirs;
   final String password; // solo para Firebase Auth, NO se guarda en Firestore
-  final Uint8List? fotoBytes; // pendiente: aún no se guarda en ningún lado
+  final Uint8List? photoBytes; // pendiente: aún no se guarda en ningún lado
 
-  Usuario({
+  UserFormData({
     required this.name,
     required this.lastName,
     required this.birthDate,
@@ -22,11 +22,11 @@ class Usuario {
     this.type = 'member',
     this.phone = '',
     this.legalDataAreTheirs = false, // se confirmará en un paso posterior
-    this.fotoBytes,
+    this.photoBytes,
   });
 
   /// true si ya cumplió 18 años (compara año, mes y día).
-  bool get esMayorDeEdad {
+  bool get isOfLegalAge {
     final hoy = DateTime.now();
     var edad = hoy.year - birthDate.year;
     if (hoy.month < birthDate.month ||
@@ -38,21 +38,21 @@ class Usuario {
 
   /// Mapa para Firestore, con la estructura de la colección "users".
   Map<String, dynamic> toMap(String uid) => {
-        'uid': uid,
-        'name': name,
-        'last_name': lastName,
-        'type': type,
-        'birth_date': _fechaString(birthDate), // "yyyy-MM-dd"
-        'email': email,
-        'phone': phone,
-        'legal_data_are_theirs': legalDataAreTheirs,
-        'signature_url': '',
-        'ine_url': '',
-        'registration_payed': false,
-        'creation_date': FieldValue.serverTimestamp(),
-        'deletion_date': null,
-      };
+    'uid': uid,
+    'name': name,
+    'last_name': lastName,
+    'type': type,
+    'birth_date': _formatDate(birthDate), // "yyyy-MM-dd"
+    'email': email,
+    'phone': phone,
+    'legal_data_are_theirs': legalDataAreTheirs,
+    'signature_url': '',
+    'ine_url': '',
+    'registration_payed': false,
+    'creation_date': FieldValue.serverTimestamp(),
+    'deletion_date': null,
+  };
 
-  static String _fechaString(DateTime d) =>
+  static String _formatDate(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 }

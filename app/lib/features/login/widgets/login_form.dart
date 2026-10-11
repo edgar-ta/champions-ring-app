@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 
 import '../../signup/widgets/registro_form.dart' show kRojo;
-import '../models/auth_servicio.dart';
+import '../services/auth_service.dart';
 import '../models/login_credentials.dart';
 import 'login_field.dart';
 
 class LoginForm extends StatefulWidget {
-  const LoginForm({super.key, required this.onExito, AuthServicio? auth})
+  const LoginForm({super.key, required this.onSuccess, AuthService? auth})
     : _auth = auth;
 
-  final VoidCallback onExito;
-  final AuthServicio? _auth;
+  final VoidCallback onSuccess;
+  final AuthService? _auth;
 
   @override
   State<LoginForm> createState() => _LoginFormState();
@@ -18,56 +18,58 @@ class LoginForm extends StatefulWidget {
 
 class _LoginFormState extends State<LoginForm> {
   final _formKey = GlobalKey<FormState>();
-  final _correoCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
-  late final AuthServicio _auth = widget._auth ?? AuthServicio();
+  late final AuthService _auth = widget._auth ?? AuthService();
 
-  bool _ocultar = true;
-  bool _cargando = false;
+  bool _hidePassword = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
-    _correoCtrl.dispose();
+    _emailCtrl.dispose();
     _passCtrl.dispose();
     super.dispose();
   }
 
-  void _mensaje(String texto) {
+  void _showSnackbar(String texto) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(texto)));
   }
 
-  Future<void> _iniciarSesion() async {
+  Future<void> _logIn() async {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _cargando = true);
+    setState(() => _isLoading = true);
     try {
-      await _auth.iniciarSesion(
-        LoginCredentials(email: _correoCtrl.text, password: _passCtrl.text),
+      await _auth.logIn(
+        LoginCredentials(email: _emailCtrl.text, password: _passCtrl.text),
       );
       if (!mounted) return;
-      widget.onExito();
+      widget.onSuccess();
     } on AuthException catch (e) {
-      if (mounted) _mensaje(e.mensaje);
+      if (mounted) _showSnackbar(e.mensaje);
     } finally {
-      if (mounted) setState(() => _cargando = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  Future<void> _olvideContrasena() async {
-    final error = LoginCredentials.validateEmail(_correoCtrl.text);
+  Future<void> _recoverPassword() async {
+    final error = LoginCredentials.validateEmail(_emailCtrl.text);
     if (error != null) {
-      _mensaje('Escribe tu correo para enviarte el enlace de recuperación');
+      _showSnackbar(
+        'Escribe tu correo para enviarte el enlace de recuperación',
+      );
       return;
     }
     try {
-      await _auth.recuperarContrasena(_correoCtrl.text);
+      await _auth.recoverPassword(_emailCtrl.text);
       if (mounted)
-        _mensaje('Te enviamos un correo para restablecer tu contraseña');
+        _showSnackbar('Te enviamos un correo para restablecer tu contraseña');
     } on AuthException catch (e) {
-      if (mounted) _mensaje(e.mensaje);
+      if (mounted) _showSnackbar(e.mensaje);
     }
   }
 
@@ -79,40 +81,40 @@ class _LoginFormState extends State<LoginForm> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           LoginField(
-            etiqueta: 'Correo electrónico',
-            controller: _correoCtrl,
-            icono: Icons.mail_outline,
+            label: 'Correo electrónico',
+            controller: _emailCtrl,
+            icon: Icons.mail_outline,
             hint: 'ejemplo@templo.com',
-            teclado: TextInputType.emailAddress,
-            accion: TextInputAction.next,
+            keyboard: TextInputType.emailAddress,
+            action: TextInputAction.next,
             autofillHints: const [AutofillHints.email],
             validator: LoginCredentials.validateEmail,
           ),
           const SizedBox(height: 16),
           LoginField(
-            etiqueta: 'Contraseña',
+            label: 'Contraseña',
             controller: _passCtrl,
-            icono: Icons.lock_outline,
-            ocultar: _ocultar,
-            accion: TextInputAction.done,
-            onSubmitted: (_) => _iniciarSesion(),
+            icon: Icons.lock_outline,
+            hideText: _hidePassword,
+            action: TextInputAction.done,
+            onSubmitted: (_) => _logIn(),
             autofillHints: const [AutofillHints.password],
             validator: LoginCredentials.validatePassword,
-            sufijo: IconButton(
+            suffix: IconButton(
               icon: Icon(
-                _ocultar
+                _hidePassword
                     ? Icons.visibility_off_outlined
                     : Icons.visibility_outlined,
                 color: const Color(0xFF6B6B6B),
                 size: 20,
               ),
-              onPressed: () => setState(() => _ocultar = !_ocultar),
+              onPressed: () => setState(() => _hidePassword = !_hidePassword),
             ),
           ),
           Align(
             alignment: Alignment.centerRight,
             child: TextButton(
-              onPressed: _cargando ? null : _olvideContrasena,
+              onPressed: _isLoading ? null : _recoverPassword,
               style: TextButton.styleFrom(
                 foregroundColor: const Color(0xFF1A1A1A),
                 padding: const EdgeInsets.symmetric(vertical: 8),
@@ -129,7 +131,7 @@ class _LoginFormState extends State<LoginForm> {
           SizedBox(
             height: 52,
             child: ElevatedButton(
-              onPressed: _cargando ? null : _iniciarSesion,
+              onPressed: _isLoading ? null : _logIn,
               style: ElevatedButton.styleFrom(
                 backgroundColor: kRojo,
                 foregroundColor: Colors.white,
@@ -138,7 +140,7 @@ class _LoginFormState extends State<LoginForm> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: _cargando
+              child: _isLoading
                   ? const SizedBox(
                       width: 22,
                       height: 22,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../widgets/login_form.dart';
-import '../../signup/screens/registro_screen.dart';
+import '../../signup/screens/signup_screen.dart';
 import '../../home/screens/home_screen.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -16,7 +16,7 @@ class LoginScreen extends StatelessWidget {
 
   void _goToSignupScreen(BuildContext context) {
     Navigator.of(context)
-        .push(MaterialPageRoute(builder: (_) => const RegistroScreen()));
+        .push(MaterialPageRoute(builder: (_) => const SignUpScreen()));
   }
 
   @override
@@ -53,7 +53,7 @@ class LoginScreen extends StatelessWidget {
                     style: TextStyle(fontSize: 13, color: Color(0xFF6B6B6B)),
                   ),
                   const SizedBox(height: 28),
-                  LoginForm(onExito: () => _goToHomeScreen(context)),
+                  LoginForm(onSuccess: () => _goToHomeScreen(context)),
                   const SizedBox(height: 28),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
