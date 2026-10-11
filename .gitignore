@@ -50,8 +50,10 @@
 /docs/**/*.docx
 /docs/**/*.dotx
 /docs/**/*.pdf
-/docs/**/*.mp4
+/docs/**/*.png
+/docs/**/*.jpg
+/docs/**/*.jpeg
 /docs/**/*.m4a
+/docs/**/*.mp4
 /docs/**/*.svg
-
 .env

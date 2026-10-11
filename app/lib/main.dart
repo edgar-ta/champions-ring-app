@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:champions_ring_app/features/authentication/screens/login_screen.dart';
+import 'core/firebase/firebase_service.dart';
+import 'features/login/screens/login_screen.dart';
 
-void main() {
-  runApp(const ChampionRingApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await FirebaseService.initialize();
+
+  runApp(const MyApp());
 }
 
 class ChampionRingApp extends StatelessWidget {
@@ -12,13 +17,7 @@ class ChampionRingApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: "Champion's Ring",
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFFF3045)),
-        fontFamily: 'Arial',
-      ),
-      home: const LoginScreen(),
+      home:const LoginScreen(),
     );
   }
 }

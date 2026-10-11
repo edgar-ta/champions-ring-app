@@ -1,96 +1,74 @@
-# Manual de estructura de features
+# Manual de Estructura del Repositorio
 
-## Champion's Ring App
+Versión 2.0.0
 
-### 1. Objetivo
+# 1. Objetivo
 
 El proyecto utiliza una estructura organizada por **features (funcionalidades)**. El objetivo es mantener relacionado en un mismo lugar todo el código correspondiente a una funcionalidad de la aplicación y facilitar el trabajo simultáneo de los integrantes del equipo.
 
 La estructura busca ser sencilla y adecuada para el tamaño actual del proyecto, evitando agregar capas o abstracciones innecesarias.
 
----
+# 2. Estructura general
 
-## 2. Estructura general
-
-El código principal de la aplicación se encuentra dentro de `lib/`:
+El código principal de la aplicación (el cual se encuentra dentro de la carpeta `lib/`) sigue la siguiente estructura general:
 
 ```text
 lib/
 ├── main.dart
 │
 ├── core/
-│   ├── router/
-│   │   ├── app_router.dart
-│   │   └── route_names.dart
-│   │
 │   ├── constants/
-│   ├── theme/
-│   └── result/
-│       └── result.dart
+│   ├── router/
+│   └── utils/
 │
 ├── features/
 │   ├── authentication/
+│   │   ├── enums/
+│   │   ├── models/
+│   │   ├── repositories/
+│   │   ├── screens/
+│   │   ├── services/
+│   │   └── widgets/
 │   ├── members/
 │   ├── subscriptions/
 │   └── ...
 │
 └── shared/
-    └── widgets/
+    ├── widgets/
+    └── theme/
 ```
 
-Cada carpeta tiene una responsabilidad específica.
 
----
 
 # 3. `core/`
 
-La carpeta `core/` contiene elementos **generales de la aplicación** que pueden ser utilizados por varias features.
+La carpeta `core/` contiene lógica e infraestructura **general de la aplicación** que puede ser utilizada por varias features.
 
 No debe contener código exclusivo de una funcionalidad.
 
-Por ejemplo:
+### `core/constants/`
 
-```text
-core/
-├── router/
-├── constants/
-├── theme/
-└── result/
-```
+Contiene valores constantes compartidos por toda la aplicación, evitando que estos valores se definan repetidamente en diferentes features.
 
 ### `core/router/`
 
 Contiene la navegación general de la aplicación.
 
-```text
-core/router/
-├── app_router.dart
-└── route_names.dart
-```
-
 Aquí se definen las rutas que conectan diferentes pantallas y features.
-
-Por ejemplo:
-
-```text
-Login
-  ↓
-Registro
-  ↓
-Inicio
-  ↓
-Perfil
-```
 
 El router pertenece a `core` porque **coordina diferentes funcionalidades** de la aplicación.
 
----
+### `core/utils/`
+
+Contiene funciones, clases o herramientas auxiliares de propósito general que facilitan tareas comunes de la aplicación y que pueden ser utilizadas por varias features.
+
+Un archivo pertenece a core/utils/ si proporciona una herramienta reutilizable para realizar una operación, pero no representa una regla de negocio específica de una feature.
 
 # 4. `features/`
 
 Esta es la carpeta principal del proyecto.
 
-Cada funcionalidad importante de la aplicación debe tener su propia carpeta.
+Cada entrada de la lista en el archivo `lista-de-funcionalidades.md` debe tener su propia carpeta. La carpeta debe coincidir con el nombre de la entrada que tiene asociada.
 
 Ejemplo:
 
@@ -104,9 +82,9 @@ features/
 
 La regla principal es:
 
-> **Si un código pertenece exclusivamente a una funcionalidad, debe vivir dentro de esa feature.**
+> **Si un código pertenece exclusivamente a una funcionalidad, debe vivir dentro de la carpeta de esa funcionalidad.**
 
----
+
 
 # 5. Estructura interna de una feature
 
@@ -125,9 +103,9 @@ No es obligatorio crear todas las carpetas desde el principio.
 
 **Solo se crean las carpetas que realmente sean necesarias.**
 
----
 
-# 6. `screens/`
+
+# 6. `<feature>/screens/`
 
 Contiene las pantallas completas de una feature.
 
@@ -153,9 +131,13 @@ Ejemplos:
 
 Si el archivo representa una **pantalla completa**, debe ir en `screens/`.
 
----
+# 7. `<feature>/services/`
 
-# 7. `widgets/`
+Contiene los servicios propios de la feature, encargados de ejecutar o coordinar operaciones que involucran lógica de negocio y que pueden utilizar uno o más repositories, servicios u otras dependencias.
+
+Un archivo pertenece a esta carpeta cuando su responsabilidad principal es realizar una operación o proceso de la feature, en lugar de encargarse directamente de la persistencia o acceso a los datos.
+
+# 8. `<feature>/widgets/`
 
 Contiene componentes de interfaz reutilizables dentro de una feature.
 
@@ -167,19 +149,11 @@ authentication/
     └── register_form.dart
 ```
 
-Por ejemplo, `RegisterScreen` puede utilizar:
-
-```text
-RegisterScreen
-      │
-      └── RegisterForm
-```
 
 La diferencia es:
 
 ```text
 screens/ → pantallas completas
-
 widgets/ → componentes utilizados dentro de las pantallas
 ```
 
@@ -192,9 +166,9 @@ Se recomienda crear un widget cuando:
 * Se reutiliza.
 * Hace que una pantalla sea más fácil de leer.
 
----
 
-# 8. `models/`
+
+# 8. `<feature>/models/`
 
 Contiene las clases que representan los datos de la feature.
 
@@ -207,11 +181,11 @@ authentication/
     └── register_user_data.dart
 ```
 
-### `User`
-
-Representa un usuario existente dentro del sistema.
+Ejemplo
 
 ```dart
+// user.dart
+
 class User {
   final String uid;
   final UserType type;
@@ -219,7 +193,7 @@ class User {
 }
 ```
 
-# 9. `enums/`
+# 9. `<feature>/enums/`
 
 Contiene enumeraciones relacionadas con la feature.
 
@@ -235,6 +209,8 @@ authentication/
 Ejemplo:
 
 ```dart
+// user_type.dart
+
 enum UserType {
   member,
   receptionist,
@@ -242,33 +218,17 @@ enum UserType {
 }
 ```
 
-Y:
+Si un `enum` solamente tiene sentido dentro de una feature, debe permanecer dentro de esa feature. Si posteriormente se convierte en un concepto utilizado por toda la aplicación, puede evaluarse moverlo a `core/`.
 
-```dart
-enum UserRegisterReason {
-  emailAlreadyInUse,
-  invalidEmail,
-  weakPassword,
-  operationNotAllowed,
-  authenticationError,
-  firestoreError,
-  unexpectedError,
-}
-```
 
-### Regla
 
-Si un `enum` solamente tiene sentido dentro de una feature, debe permanecer dentro de esa feature.
-
-Si posteriormente se convierte en un concepto utilizado por toda la aplicación, puede evaluarse moverlo a `core/`.
-
----
-
-# 10. `repositories/`
+# 10. `<feature>/repositories/`
 
 Los repositories contienen la lógica necesaria para **obtener o modificar datos**.
 
-Ejemplo:
+Esta arquitectura permite mantener separada la interfaz de usuario de la lógica de acceso a datos.
+
+Por ejemplo:
 
 ```text
 authentication/
@@ -277,11 +237,10 @@ authentication/
     └── firebase_user_repository.dart
 ```
 
-### `UserRepository`
-
-Define qué operaciones puede realizar la aplicación:
-
+Ejemplo:
 ```dart
+user_repository.dart
+
 abstract class UserRepository {
   Future<Result<User, UserRegisterReason>> registerUser(
     RegisterUserData data,
@@ -289,39 +248,7 @@ abstract class UserRepository {
 }
 ```
 
-### `FirebaseUserRepository`
 
-Contiene la implementación utilizando Firebase:
-
-```text
-FirebaseUserRepository
-        │
-        ├── Firebase Authentication
-        │
-        └── Cloud Firestore
-```
-
-La pantalla no debería encargarse directamente de crear usuarios en Firebase.
-
-El flujo será:
-
-```text
-RegisterScreen
-      ↓
-RegisterUserData
-      ↓
-UserRepository
-      ↓
-FirebaseUserRepository
-      ↓
-Firebase Authentication
-      +
-Cloud Firestore
-```
-
-Esto permite mantener separada la interfaz de usuario de la lógica de acceso a datos.
-
----
 
 # 11. `shared/`
 
@@ -354,7 +281,7 @@ AppRouter
 → core/router/
 
 Result
-→ core/result/
+→ core/utils/result/
 
 CustomButton
 → shared/widgets/
@@ -363,73 +290,32 @@ RegisterForm
 → features/authentication/widgets/
 ```
 
----
+
 
 # 12. ¿Dónde colocar un archivo nuevo?
 
-Antes de crear un archivo, responder estas preguntas:
-
-### ¿Pertenece a una feature específica?
-
-**Sí:**
+Utiliza el siguiente diagrama para determinar la ubicación de un nuevo archivo:
 
 ```text
-features/<feature>/
+¿Es global?
+│
+├── Sí → ¿Es infraestructura/lógica fundamental?
+│          ├── Sí → core/
+│          └── No → shared/
+│
+└── No → features/<feature>/
+              │
+              ├── Pantalla       → screens/
+              ├── UI reutilizable → widgets/
+              ├── Datos          → models/
+              ├── Enumeración    → enums/
+              └── Acceso a datos → repositories/
 ```
 
-**No:**
 
-Evaluar si pertenece a `core/` o `shared/`.
 
----
 
-### ¿Es una pantalla?
-
-```text
-screens/
-```
-
-### ¿Es un componente de interfaz?
-
-```text
-widgets/
-```
-
-### ¿Representa datos?
-
-```text
-models/
-```
-
-### ¿Es una enumeración?
-
-```text
-enums/
-```
-
-### ¿Obtiene o modifica datos?
-
-```text
-repositories/
-```
-
-### ¿Es utilizado por toda la aplicación?
-
-Evaluar:
-
-```text
-core/
-```
-
-o:
-
-```text
-shared/
-```
-
----
-
-# 15. Regla para crear nuevas features
+# 13. Procedimiento para crear nuevas features
 
 Cuando se agregue una nueva funcionalidad, primero se debe crear su carpeta dentro de `features/`.
 
@@ -458,9 +344,9 @@ subscriptions/
 
 No se deben crear carpetas vacías solamente para mantener una estructura idéntica.
 
----
 
-# 16. Regla general del repositorio
+
+# 14. Reglamento general del repositorio
 
 Para mantener el proyecto ordenado:
 
@@ -475,26 +361,4 @@ Para mantener el proyecto ordenado:
 9. **Antes de crear una abstracción nueva, comprobar si realmente aporta reutilización o separación de responsabilidades.**
 10. **Si una pieza de código puede pertenecer claramente a una sola feature, debe permanecer dentro de ella.**
 
----
 
-# 17. Diagrama de selección de carpeta
-
-Cuando exista duda sobre dónde colocar algo, utilizar esta referencia:
-
-```text
-¿Es global?
-│
-├── Sí → ¿Es infraestructura/lógica fundamental?
-│          ├── Sí → core/
-│          └── No → shared/
-│
-└── No → features/<feature>/
-              │
-              ├── Pantalla       → screens/
-              ├── UI reutilizable → widgets/
-              ├── Datos          → models/
-              ├── Enumeración    → enums/
-              └── Acceso a datos → repositories/
-```
-
-El objetivo no es tener la estructura más sofisticada posible, sino que **cualquier integrante pueda abrir el repositorio y saber dónde debe colocar su código sin introducir dependencias innecesarias**.
