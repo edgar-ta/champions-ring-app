@@ -10,8 +10,8 @@ void main() async {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class ChampionRingApp extends StatelessWidget {
+  const ChampionRingApp({super.key});
 
   @override
   Widget build(BuildContext context) {
