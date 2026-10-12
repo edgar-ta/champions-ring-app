@@ -12,7 +12,12 @@
           "package_name": "com.example.champions_ring_app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1084769880827-19den1kk0be6ncdovl3o05ufq1bjrc1n.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDEPPgPp-vKi47VFn32pD6A3CxLQxN38Q4"
@@ -20,7 +25,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1084769880827-19den1kk0be6ncdovl3o05ufq1bjrc1n.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1084769880827-qkakdsdme259gu5h0gpdnme2ev60vjtl.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.championsRingApp"
+              }
+            }
+          ]
         }
       }
     }

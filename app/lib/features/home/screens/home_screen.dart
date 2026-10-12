@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../login/screens/login_screen.dart';
-import '../../signup/widgets/personal_data_form.dart' show kRojo;
+import '../../inscription/widgets/personal_data_form.dart' show kRojo;
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});

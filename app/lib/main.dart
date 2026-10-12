@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
-import 'core/firebase/firebase_service.dart';
+
+import 'core/firebase/firestore_instance.dart';
 import 'features/login/screens/login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await FirebaseService.initialize();
+  await FirestoreInstance.initialize();
 
-  runApp(const MyApp());
+  runApp(const ChampionRingApp());
 }
 
 class ChampionRingApp extends StatelessWidget {
@@ -17,7 +18,7 @@ class ChampionRingApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home:const LoginScreen(),
+      home: const LoginScreen(),
     );
   }
 }

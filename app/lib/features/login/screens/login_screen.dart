@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../widgets/login_form.dart';
-import '../../signup/screens/signup_screen.dart';
+import '../../inscription/screens/inscription_screen.dart';
 import '../../home/screens/home_screen.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -16,7 +16,7 @@ class LoginScreen extends StatelessWidget {
 
   void _goToSignupScreen(BuildContext context) {
     Navigator.of(context)
-        .push(MaterialPageRoute(builder: (_) => const SignUpScreen()));
+        .push(MaterialPageRoute(builder: (_) => const InscriptionScreen()));
   }
 
   @override
@@ -68,7 +68,7 @@ class LoginScreen extends StatelessWidget {
                       GestureDetector(
                         onTap: () => _goToSignupScreen(context),
                         child: const Text(
-                          'Regístrate',
+                          'Inscríbete a nuestro gimnasio',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w800,
