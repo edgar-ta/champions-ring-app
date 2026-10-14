@@ -8,7 +8,7 @@ void main() async {
 
   await FirestoreInstance.initialize();
 
-  runApp(const ChampionRingApp());
+  runApp(const ChampionRingApp();
 }
 
 class ChampionRingApp extends StatelessWidget {
