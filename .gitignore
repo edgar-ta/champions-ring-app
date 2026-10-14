@@ -52,5 +52,8 @@
 /docs/**/*.pdf
 /docs/**/*.mp4
 /docs/**/*.m4a
+/docs/**/*.csv
+/docs/**/*.jpg
+/docs/**/*.png
 
 .env
