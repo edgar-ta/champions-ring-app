@@ -4,7 +4,7 @@ import 'core_date.dart';
 
 enum CoreUserType { administrator, member, receptionist }
 
-enum CorePaymentMethod { cash, card }
+enum CorePaymentMethod { cash , mercadoPago, card }
 
 class CoreUser {
   final DateTime birthDate;

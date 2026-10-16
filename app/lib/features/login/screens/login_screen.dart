@@ -68,7 +68,7 @@ class LoginScreen extends StatelessWidget {
                       GestureDetector(
                         onTap: () => _goToSignupScreen(context),
                         child: const Text(
-                          'Inscríbete a nuestro gimnasio',
+                          'Regístrate',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w800,
