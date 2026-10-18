@@ -1,6 +1,6 @@
 /// Opciones de plan que se muestran en el paso de selección.
 class MembershipPlan {
-  final int id; // 0 = sin plan, 1 = día, 2 = semana, 3 = mes
+  final int id; // 2 = semana, 3 = mes
   final String label;
   final String title;
   final String validity;
@@ -18,27 +18,6 @@ class MembershipPlan {
 }
 
 const List<MembershipPlan> memberships = [
-  MembershipPlan(
-    id: 0,
-    label: 'SIN PLAN',
-    title: 'Continuar sin plan',
-    validity:
-        'Podrás pagar o contratar un plan después, presencialmente o desde la aplicación.',
-    price: 0,
-    benefits: [],
-  ),
-  MembershipPlan(
-    id: 1,
-    label: 'DÍA',
-    title: 'Acceso por 1 día',
-    validity: 'El beneficio debe usarse el mismo día del pago.',
-    price: 69,
-    benefits: [
-      'Acceso completo al área de pesas',
-      '1 clase grupal de boxeo a elegir',
-      'Uso de regaderas y vestidores',
-    ],
-  ),
   MembershipPlan(
     id: 2,
     label: 'SEMANA',

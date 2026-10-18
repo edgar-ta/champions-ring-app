@@ -72,19 +72,24 @@ class _PersonalDataFormState extends State<PersonalDataForm> {
     _photoFormat = data.photoFormat;
   }
 
+  // Formato de fecha: día/mes/año.
   String _formatDate(DateTime date) =>
-      '${date.day.toString().padLeft(2, '0')} / '
-      '${date.month.toString().padLeft(2, '0')} / ${date.year}';
+      '${date.day.toString().padLeft(2, '0')}/'
+      '${date.month.toString().padLeft(2, '0')}/'
+      '${date.year}';
 
   bool get _isOfLegalAge {
     final birthDate = _birthDate;
     if (birthDate == null) return true;
+
     final today = DateTime.now();
     var age = today.year - birthDate.year;
+
     if (today.month < birthDate.month ||
         (today.month == birthDate.month && today.day < birthDate.day)) {
       age--;
     }
+
     return age >= 18;
   }
 
@@ -107,8 +112,11 @@ class _PersonalDataFormState extends State<PersonalDataForm> {
       maxWidth: 1080,
       imageQuality: 85,
     );
+
     if (imagen == null) return;
+
     final bytes = await imagen.readAsBytes();
+
     if (bytes.length > 5 * 1024 * 1024) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -119,21 +127,26 @@ class _PersonalDataFormState extends State<PersonalDataForm> {
       }
       return;
     }
+
     setState(() {
       _photoBytes = bytes;
-      var regexp = RegExp(r'\.([^.]+)$');
+      final regexp = RegExp(r'\.([^.]+)$');
       _photoFormat = regexp.firstMatch(imagen.name)?.group(1)?.toLowerCase();
     });
   }
 
+  // Abre el calendario en español de México.
   Future<void> _pickBirthDate() async {
     final hoy = DateTime.now();
+
     final fecha = await showDatePicker(
       context: context,
+      locale: const Locale('es', 'MX'),
       initialDate: _birthDate ?? DateTime(hoy.year - 18),
       firstDate: DateTime(1900),
       lastDate: hoy,
     );
+
     if (fecha != null) {
       setState(() {
         _birthDate = fecha;
@@ -150,22 +163,26 @@ class _PersonalDataFormState extends State<PersonalDataForm> {
     final phone = _phoneValue;
     final photoBytes = _photoBytes;
     final photoFormat = _photoFormat;
+
     if (birthDate == null || phone == null || phone.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Completa tu fecha y teléfono.')),
       );
       return;
     }
+
     if (photoBytes == null || photoFormat == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Selecciona una foto de perfil.')),
       );
       return;
     }
+
     final isMinor = !_isOfLegalAge;
     final guardianName = _guardianNameCtrl.text.trim();
     final guardianPhone = _guardianPhoneValue;
     final guardianRelationship = _guardianRelationshipCtrl.text.trim();
+
     if (isMinor &&
         (guardianName.isEmpty ||
             guardianPhone == null ||
@@ -176,6 +193,7 @@ class _PersonalDataFormState extends State<PersonalDataForm> {
       );
       return;
     }
+
     widget.onSubmit(
       UserInscription_PersonalData(
         name: _firstNameCtrl.text.trim(),
@@ -194,7 +212,8 @@ class _PersonalDataFormState extends State<PersonalDataForm> {
     );
   }
 
-  // ---------- estilos ----------
+  // ---------- Estilos ----------
+
   OutlineInputBorder _buildInputBorder(Color color) => OutlineInputBorder(
     borderRadius: BorderRadius.circular(12),
     borderSide: BorderSide(color: color),
@@ -247,7 +266,8 @@ class _PersonalDataFormState extends State<PersonalDataForm> {
         onPressed: onTap,
       );
 
-  // ---------- UI ----------
+  // ---------- Interfaz del formulario ----------
+
   @override
   Widget build(BuildContext context) {
     return Form(
@@ -303,7 +323,7 @@ class _PersonalDataFormState extends State<PersonalDataForm> {
               readOnly: true,
               onTap: _pickBirthDate,
               decoration: _buildInputDecoration(
-                'DD / MM / AAAA',
+                'DD/MM/AAAA',
                 Icons.calendar_today_outlined,
               ),
               validator: (_) =>
@@ -362,9 +382,12 @@ class _PersonalDataFormState extends State<PersonalDataForm> {
                 Icons.mail_outline,
               ),
               validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'Campo requerido';
-                if (!v.contains('@') || !v.contains('.'))
+                if (v == null || v.trim().isEmpty) {
+                  return 'Campo requerido';
+                }
+                if (!v.contains('@') || !v.contains('.')) {
                   return 'Correo inválido';
+                }
                 return null;
               },
             ),
@@ -418,8 +441,9 @@ class _PersonalDataFormState extends State<PersonalDataForm> {
               ),
               validator: (v) {
                 if (v == null || v.isEmpty) return 'Campo requerido';
-                if (v != _passwordCtrl.text)
+                if (v != _passwordCtrl.text) {
                   return 'Las contraseñas no coinciden';
+                }
                 return null;
               },
             ),
@@ -533,13 +557,16 @@ class _DiscontinuousBorderPainter extends CustomPainter {
       Offset.zero & size,
       const Radius.circular(16),
     );
+
     canvas.drawRRect(rrect, Paint()..color = const Color(0xFFF7F7F7));
 
     final paint = Paint()
       ..color = const Color(0xFFCFCFCF)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2;
+
     final path = Path()..addRRect(rrect);
+
     for (final metric in path.computeMetrics()) {
       double d = 0;
       while (d < metric.length) {
