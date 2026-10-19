@@ -102,6 +102,8 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
         id.ineFrontFormat == null ||
         id.ineBackBytes == null ||
         id.ineBackFormat == null ||
+        (!personal.isOfLegalAge &&
+            (id.curpBytes == null || id.curpFormat == null)) ||
         waiver == null ||
         plan == null ||
         payment == null) {
@@ -113,12 +115,16 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
       return;
     }
     final documentSizes = [
-      id.ineFrontBytes!.length,
-      id.ineBackBytes!.length,
+      if (!personal.isOfLegalAge) id.curpBytes!.length,
       waiver.signatureBytes.length,
     ];
     if (documentSizes.any((size) => size > _maxDocumentBytes)) {
-      _showError('La INE y la firma deben pesar como máximo 20 MB cada una.');
+      _showError('El CURP y la firma deben pesar como máximo 20 MB cada uno.');
+      return;
+    }
+    if (id.ineFrontBytes!.length > 5 * 1024 * 1024 ||
+        id.ineBackBytes!.length > 5 * 1024 * 1024) {
+      _showError('Cada lado de la INE debe pesar como máximo 5 MB.');
       return;
     }
     if (!personal.isOfLegalAge &&
@@ -168,7 +174,7 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
   Widget build(BuildContext context) {
     const names = [
       'Datos personales',
-      'INE',
+      'Documentos',
       'Responsiva',
       'Plan de entrenamiento',
       'Resumen de compra',
@@ -183,7 +189,7 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
       title: names[_step],
       subtitle: const [
         'Introduce tu información para comenzar con tu inscripción al gimnasio.',
-        'Sube una imagen clara de tu INE o la de tu tutor legal (menores de edad).',
+        'Sube imágenes claras de los documentos requeridos. Menores de edad: incluye tu CURP.',
         'Revisa y firma la carta responsiva. Menores de edad: solicitar firma de su tutor legal.',
         'Selecciona la opción de entrenamiento que mejor se adapte a ti.',
         'Revisa los beneficios y el total.',

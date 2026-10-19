@@ -39,7 +39,7 @@ class UserStorageService {
     bytes,
     format,
     path: 'users/$userId/ine_back',
-    maxBytes: 20 * 1024 * 1024,
+    maxBytes: 5 * 1024 * 1024,
   );
 
   Future<Result<ImageUploadError, String>> uploadIneFront(
@@ -49,6 +49,16 @@ class UserStorageService {
     bytes,
     format,
     path: 'users/$userId/ine_front',
+    maxBytes: 5 * 1024 * 1024,
+  );
+
+  Future<Result<ImageUploadError, String>> uploadCurp(
+    Uint8List bytes,
+    String format,
+  ) => _upload(
+    bytes,
+    format,
+    path: 'users/$userId/curp',
     maxBytes: 20 * 1024 * 1024,
   );
 

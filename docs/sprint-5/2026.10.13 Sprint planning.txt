@@ -1,0 +1,22 @@
+¿Qué es lo que hemos hecho hasta el momento?
+	Tenemos el formulario de registro ya funcional, pero tiene detalles qué afinar.
+	
+¿En qué nos vamos a enfocar esta semana?
+	Terminar de afinar los detalles del formulario de registro y comenzar a implementar la funcionalidad de pagos con tarjeta.
+
+¿Qué puede hacer cada uno?
+	Marvin
+		Implementar un MVP de la funcionalidad de pagos con tarjeta
+	
+	Santi
+		Pantalla de inicio del usuario
+	
+	Yo
+		Corregir los detalles de la pantalla de inscripción
+	
+	No se necesita registrar usuarios que toman la clase de prueba. Solamente se necesita registrar el
+	nombre cuando es visita.
+	
+	El registro de visitas sin inscripción le corresponde al módulo web.
+	
+	Cuando te inscribes, te conviene pagar una semana o una mensualidad. Eso no es necesario
