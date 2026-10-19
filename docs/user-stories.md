@@ -12,6 +12,10 @@ Para llevar un control más minucioso de mis ventas
 
 ### Historias de Usuario
 
+```text
+
+```
+
 ## Épica CRA-4
 
 ### Enunciado de la Épica
