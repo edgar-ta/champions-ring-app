@@ -1,3 +1,5 @@
+Versión: 1.0.0
+
 Funcionalidades del Módulo Web
     Registrar usuarios prospectos
         Debe haber un apartado para que el recepcionista pueda registrar 
