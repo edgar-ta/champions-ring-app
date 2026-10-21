@@ -40,11 +40,11 @@ enum UserInscriptionError {
 }
 
 /// Coordina la creación de la cuenta, la subida de archivos y el perfil Firestore.
-class SignupService {
-  static SignupService? _instance;
-  static SignupService get instance {
-    SignupService._instance ??= SignupService();
-    return SignupService._instance!;
+class InscriptionService {
+  static InscriptionService? _instance;
+  static InscriptionService get instance {
+    InscriptionService._instance ??= InscriptionService();
+    return InscriptionService._instance!;
   }
 
   Future<Result<UserInscriptionError, String>> signUp(

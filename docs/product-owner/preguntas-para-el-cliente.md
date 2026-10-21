@@ -1,6 +1,6 @@
 # Preguntas para el Cliente
 
-Versión: 1.0.0
+Versión: 1.1.0
 
 - ¿Solo pueden ser mayores de edad los usuarios que pagan visita?
   No. El plan de la visita puede ser adquirido por menores y mayores de edad por igual.
@@ -14,3 +14,4 @@ Versión: 1.0.0
 - En el caso de que el precio de algún producto cambie, ¿quién se encargaría de registrarlo 
   en el sistema?
 
+- ¿Qué información se debe registrar para darle acceso a una persona que paga la visita del gimnasio?

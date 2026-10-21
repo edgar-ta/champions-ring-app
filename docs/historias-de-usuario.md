@@ -1,13 +1,11 @@
 # Historias de Usuario
 
-Versión: 2.14.0
+Versión: 2.15.3
 
 ## Definiciones
 
 ```
-Usuario :=
-    | Administrador
-    | Recepcionista
+Cliente :=
     | Miembro regular
     | Miembro becado
     | Miembro menor de edad
@@ -23,10 +21,16 @@ Miembro general :=
     | Miembro becado
     | Miembro menor de edad
 
-Cliente :=
+Usuario :=
+    | Administrador
+    | Recepcionista
     | Miembro regular
     | Miembro becado
     | Miembro menor de edad
+    | Usuario ocasional
+    | Usuario prospecto
+
+Usuario sin membresía :=
     | Usuario ocasional
     | Usuario prospecto
 ```
@@ -88,6 +92,10 @@ Administrador
     Quiero tener registrada la información del tutor de los miembros menores de edad 
     Para facilitarles el acceso mientras evito problemas legales
 
+    Como administrador,
+    Quiero tener un medio con el cual contactar a los usuarios sin membresía
+    Para enviarles información sobre la oferta de Champion's Ring y alentarlos a inscribirse en un futuro
+
 Recepcionista
     Como recepcionista, 
     Quiero registrar nuevos miembros en la computadora de la recepción 
@@ -127,6 +135,24 @@ Miembro general
     Como miembro general,
     Quiero eliminar los datos personales que le proporcioné al gimnasio
     Para ejercer mi derecho a la Cancelación del tratamiento de mis datos personales (letra C de los derechos ARCO)
+
+Usuario ocasional
+    Como usuario ocasional,
+    Quiero poder visualizar los datos personales que le proporcioné al gimnasio
+    Para ejercer mi derecho al Acceso del tratamiento de mis datos personales (letra A de los derechos ARCO)
+    ^^^^^^NO-SE-IMPLEMENTARÁ^^^^^^
+
+    Como usuario ocasional,
+    Quiero poder detener el envío de publicidad por parte del gimnasio,
+    Para evitar saturarme de información que no me es relevante
+    ^^^^^^NO-SE-IMPLEMENTARÁ^^^^^^
+
+Usuario prospecto
+    Como usuario ocasional,
+    Quiero poder detener el envío de publicidad por parte del gimnasio,
+    Para evitar saturarme de información que no me es relevante
+    ^^^^^^NO-SE-IMPLEMENTARÁ^^^^^^
+
 ```
 
 ## Épica CRA-5
@@ -176,7 +202,7 @@ Cliente
         Quiero poder pagar por productos y servicios del gimnasio usando efectivo
         Para acceder a éstos usando el efectivo que cargo conmigo
 
-Usuario visitante
+Usuario ocasional
 
 Usuario prospecto
 
