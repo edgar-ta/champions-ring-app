@@ -18,6 +18,7 @@ enum UserInscriptionError {
   profilePictureUploadFailed('No se pudo subir la foto de perfil.'),
   ineFrontUploadFailed('No se pudo subir el anverso de la INE.'),
   ineBackUploadFailed('No se pudo subir el reverso de la INE.'),
+  curpUploadFailed('No se pudo subir el CURP del usuario.'),
   signatureUploadFailed('No se pudo subir la firma de la responsiva.'),
   storageUnauthenticated('La sesión no permite subir archivos.'),
   storageUnauthorized('No hay permisos para subir los archivos.'),
@@ -60,6 +61,8 @@ class SignupService {
         id.ineFrontFormat == null ||
         id.ineBackBytes == null ||
         id.ineBackFormat == null ||
+        (!personal.isOfLegalAge &&
+            (id.curpBytes == null || id.curpFormat == null)) ||
         waiver == null ||
         plan == null ||
         payment == null) {
@@ -92,6 +95,12 @@ class SignupService {
         storage.uploadIneBack(id.ineBackBytes!, id.ineBackFormat!),
         UserInscriptionError.ineBackUploadFailed,
       );
+      final curpUrl = !personal.isOfLegalAge
+          ? await _uploadUrl(
+              storage.uploadCurp(id.curpBytes!, id.curpFormat!),
+              UserInscriptionError.curpUploadFailed,
+            )
+          : null;
       final signatureUrl = await _uploadUrl(
         storage.uploadSignature(waiver.signatureBytes, 'png'),
         UserInscriptionError.signatureUploadFailed,
@@ -107,6 +116,7 @@ class SignupService {
         guardianRelationship: personal.isOfLegalAge
             ? null
             : personal.guardianRelationship,
+        curpUrl: curpUrl,
         ineBackUrl: ineBackUrl,
         ineFrontUrl: ineFrontUrl,
         lastName: personal.lastName,

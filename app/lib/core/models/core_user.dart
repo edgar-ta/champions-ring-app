@@ -14,6 +14,7 @@ class CoreUser {
   final String? guardianName;
   final String? guardianPhone;
   final String? guardianRelationship;
+  final String? curpUrl;
   final String ineBackUrl;
   final String ineFrontUrl;
   final String lastName;
@@ -36,6 +37,7 @@ class CoreUser {
     this.guardianName,
     this.guardianPhone,
     this.guardianRelationship,
+    this.curpUrl,
     required this.ineBackUrl,
     required this.ineFrontUrl,
     required this.lastName,
@@ -59,6 +61,7 @@ class CoreUser {
     'guardian_name': guardianName,
     'guardian_phone': guardianPhone,
     'guardian_relationship': guardianRelationship,
+    'curp_url': curpUrl,
     'ine_back_url': ineBackUrl,
     'ine_front_url': ineFrontUrl,
     'last_name': lastName,

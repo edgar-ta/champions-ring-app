@@ -48,12 +48,16 @@ class UserInscription_IdData {
   final String? ineFrontFormat;
   final Uint8List? ineBackBytes;
   final String? ineBackFormat;
+  final Uint8List? curpBytes;
+  final String? curpFormat;
 
   UserInscription_IdData({
     this.ineFrontBytes,
     this.ineFrontFormat,
     this.ineBackBytes,
     this.ineBackFormat,
+    this.curpBytes,
+    this.curpFormat,
   });
 
   UserInscription_IdData copyWith({
@@ -61,11 +65,15 @@ class UserInscription_IdData {
     String? ineFrontFormat,
     Uint8List? ineBackBytes,
     String? ineBackFormat,
+    Uint8List? curpBytes,
+    String? curpFormat,
   }) => UserInscription_IdData(
     ineFrontBytes: ineFrontBytes ?? this.ineFrontBytes,
     ineFrontFormat: ineFrontFormat ?? this.ineFrontFormat,
     ineBackBytes: ineBackBytes ?? this.ineBackBytes,
     ineBackFormat: ineBackFormat ?? this.ineBackFormat,
+    curpBytes: curpBytes ?? this.curpBytes,
+    curpFormat: curpFormat ?? this.curpFormat,
   );
 }
 

@@ -4,7 +4,7 @@ import '../models/user_inscription_data.dart';
 import '../widgets/document_input.dart';
 import '../widgets/registration_scaffold.dart';
 
-/// Paso 2: carga el anverso y reverso de la INE del usuario o de su tutor.
+/// Paso 2: carga la identificación del usuario o de su tutor y, para menores, su CURP.
 class RegisterIdScreen extends StatefulWidget {
   final UserInscription_PersonalData personalData;
   final UserInscription_IdData? data;
@@ -24,7 +24,8 @@ class RegisterIdScreen extends StatefulWidget {
 }
 
 class _RegisterIdScreenState extends State<RegisterIdScreen> {
-  static const _maxBytes = 20 * 1024 * 1024;
+  static const _ineMaxBytes = 5 * 1024 * 1024;
+  static const _curpMaxBytes = 20 * 1024 * 1024;
 
   bool get _isComplete {
     if (widget.data?.ineFrontBytes == null ||
@@ -33,7 +34,9 @@ class _RegisterIdScreenState extends State<RegisterIdScreen> {
     }
     final personalData = widget.personalData;
     return personalData.isOfLegalAge ||
-        ((personalData.guardianName?.trim().isNotEmpty ?? false) &&
+        (widget.data?.curpBytes != null &&
+            widget.data?.curpFormat != null &&
+            (personalData.guardianName?.trim().isNotEmpty ?? false) &&
             RegExp(r'^\+(52|1)\d{10}$')
                 .hasMatch(personalData.guardianPhone ?? '') &&
             (personalData.guardianRelationship?.trim().isNotEmpty ?? false));
@@ -57,10 +60,19 @@ class _RegisterIdScreenState extends State<RegisterIdScreen> {
     );
   }
 
+  void _pickCurp(PickedDocument document) {
+    widget.onDataChanged(
+      (widget.data ?? UserInscription_IdData()).copyWith(
+        curpBytes: document.bytes,
+        curpFormat: document.format,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isMinor = !widget.personalData.isOfLegalAge;
-    final owner = isMinor ? 'del tutor' : 'del usuario';
+    final owner = isMinor ? 'del tutor' : '';
     return Column(
       children: [
         Expanded(
@@ -69,21 +81,33 @@ class _RegisterIdScreenState extends State<RegisterIdScreen> {
               children: [
                 DocumentInput(
                   icon: Icons.badge_outlined,
-                  title: 'Anverso de la INE $owner',
-                  description: 'Imagen legible y bien iluminada. Máximo 20 MB.',
-                  maxBytes: _maxBytes,
+                  title: 'Parte frontal de la INE $owner',
+                  description: 'Imagen legible y bien iluminada. Máximo 5 MB.',
+                  maxBytes: _ineMaxBytes,
                   initialBytes: widget.data?.ineFrontBytes,
                   onDocumentPicked: _pickFront,
                 ),
                 const SizedBox(height: 12),
                 DocumentInput(
                   icon: Icons.badge_outlined,
-                  title: 'Reverso de la INE $owner',
-                  description: 'Imagen legible y bien iluminada. Máximo 20 MB.',
-                  maxBytes: _maxBytes,
+                  title: 'Parte trasera de la INE $owner',
+                  description: 'Imagen legible y bien iluminada. Máximo 5 MB.',
+                  maxBytes: _ineMaxBytes,
                   initialBytes: widget.data?.ineBackBytes,
                   onDocumentPicked: _pickBack,
                 ),
+                if (isMinor) ...[
+                  const SizedBox(height: 12),
+                  DocumentInput(
+                    icon: Icons.assignment_ind_outlined,
+                    title: 'CURP del menor',
+                    description:
+                        'Imagen legible y bien iluminada. Máximo 20 MB.',
+                    maxBytes: _curpMaxBytes,
+                    initialBytes: widget.data?.curpBytes,
+                    onDocumentPicked: _pickCurp,
+                  ),
+                ],
               ],
             ),
           ),
