@@ -1,5 +1,5 @@
 # Funcionalidades del Módulo Web
-Versión: 1.0.0
+Versión: 2.0.0
 
 ## Funcionalidades
 ```

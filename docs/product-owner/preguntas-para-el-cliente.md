@@ -1,6 +1,6 @@
 # Preguntas para el Cliente
 
-Versión: 1.1.0
+Versión: 2.0.0
 
 - ¿Solo pueden ser mayores de edad los usuarios que pagan visita?
   No. El plan de la visita puede ser adquirido por menores y mayores de edad por igual.
