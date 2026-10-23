@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../core/firebase/firestore_instance.dart';
 import '../../login/screens/login_screen.dart';
 import './profile_screen.dart';
+import './documents_screen.dart';
 
 const Color _rojo = Color(0xFFEA3A3F);
 const Color _fondo = Color(0xFFF5F5F5);
@@ -322,12 +323,7 @@ class _HomeScreenState extends State<HomeScreen> {
         return const ProfileScreen();
 
       case 2:
-        return const _SectionPlaceholder(
-          title: 'Documentos oficiales',
-          description:
-              'Aquí podrás consultar tu INE, CURP y documentos de registro.',
-          icon: Icons.folder_outlined,
-        );
+        return const DocumentsScreen();
 
       case 3:
         return const _SectionPlaceholder(
