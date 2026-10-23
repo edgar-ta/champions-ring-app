@@ -15,3 +15,7 @@ Versión: 1.1.0
   en el sistema?
 
 - ¿Qué información se debe registrar para darle acceso a una persona que paga la visita del gimnasio?
+  Nada más el nombre completo.
+
+- ¿Qué información se debe registrar para darle acceso a una persona que solicita una clase de muestra?
+  Nada más el nombre completo.
