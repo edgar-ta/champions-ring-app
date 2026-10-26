@@ -1,7 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import 'document_image_preview_stub.dart'
+    if (dart.library.html) 'document_image_preview_web.dart';
 
 const Color _rojo = Color(0xFFEA3A3F);
 const Color _fondo = Color(0xFFF5F5F5);
@@ -312,6 +316,12 @@ class _DocumentPreviewScreen extends StatelessWidget {
       );
     }
 
+    // En Flutter Web se utiliza un elemento HTML de imagen.
+    // En Android se conserva Image.network.
+    if (kIsWeb) {
+      return buildWebDocumentPreview(document.url);
+    }
+
     return Image.network(
       document.url,
       fit: BoxFit.contain,
@@ -326,12 +336,28 @@ class _DocumentPreviewScreen extends StatelessWidget {
         );
       },
       errorBuilder: (context, error, stackTrace) {
-        return const Padding(
-          padding: EdgeInsets.all(24),
-          child: Text(
-            'No se pudo mostrar la vista previa.\n\n'
-            'Puedes intentar abrir el documento externamente.',
-            textAlign: TextAlign.center,
+        return Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.broken_image_outlined,
+                size: 48,
+                color: Colors.red,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'No se pudo cargar el documento.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              SelectableText(
+                'Detalle del error:\n$error',
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
         );
       },

@@ -15,6 +15,7 @@ class FirestoreInstance {
     final firestore = FirebaseFirestore.instance;
 
     print('FIRESTORE DATABASE ID: ${firestore.databaseId}');
+    print('FIRESTORE APP NAME: ${firestore.app.name}');
   }
 
   static FirebaseFirestore get instance {
