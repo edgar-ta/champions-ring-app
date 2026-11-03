@@ -19,9 +19,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _lastNameController = TextEditingController();
   final _phoneController = TextEditingController();
 
-  final CollectionReference<Map<String, dynamic>> _users = FirebaseFirestore
-      .instance
-      .collection('users');
+  final CollectionReference<Map<String, dynamic>> _users =
+      FirebaseFirestore.instanceFor(
+        app: FirebaseAuth.instance.app,
+        databaseId: "default",
+      ).collection('users');
 
   bool _loading = true;
   bool _saving = false;

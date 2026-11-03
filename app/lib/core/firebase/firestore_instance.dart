@@ -5,13 +5,20 @@ import '../../firebase_options.dart';
 
 class FirestoreInstance {
   static Future<void> initialize() async {
-    await Firebase.initializeApp(
+    final app = await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+
+    print('FIREBASE APP: ${app.name}');
+    print('FIREBASE PROJECT ID: ${app.options.projectId}');
+
+    final firestore = FirebaseFirestore.instance;
+
+    print('FIRESTORE DATABASE ID: ${firestore.databaseId}');
+    print('FIRESTORE APP NAME: ${firestore.app.name}');
   }
 
-  static final FirebaseFirestore instance = FirebaseFirestore.instanceFor(
-    app: Firebase.app(),
-    databaseId: 'default',
-  );
+  static FirebaseFirestore get instance {
+    return FirebaseFirestore.instance;
+  }
 }
