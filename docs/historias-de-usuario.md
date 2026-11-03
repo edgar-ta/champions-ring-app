@@ -1,6 +1,20 @@
 # Historias de Usuario
 
-Versión: 2.15.3
+Versión: 4.15.3
+
+## Clasificación de Cambios
+
+- Cambios mayores
+  - Añadir una nueva historia de usuario de tipo A IMPLEMENTAR
+  - Cambiar la definición de una entidad
+  - Renombrar una entidad
+
+- Cambios menores
+  - Añadir una nueva historia de usuario de tipo NO SE IMPLEMENTARÁ
+  - Cambios de redacción de una historia de usuario
+
+- Parches
+  - Cambios en el formato del documento
 
 ## Definiciones
 
@@ -69,6 +83,19 @@ Administrador
     DELETE
 
 Recepcionista
+    CREATE
+        Como recepcionista,
+        Quiero llevar un registro detallado de las ventas que realizo durante el día
+        Para poder justificar mi trabajo en caso de una auditoría
+
+    UPDATE
+        Como recepcionista, 
+        Quiero poder modificar libremente la información del registro de mis ventas en caso de inexactitud
+        Para hacer que la información de mi registro coincida con la realidad
+
+        Como recepcionista, 
+        Quiero poder modificar libremente la cantidad en inventario de un producto en caso de inexactitud
+        Para hacer coincidir el inventario con la realidad
 
 Miembro
 

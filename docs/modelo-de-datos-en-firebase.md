@@ -1,6 +1,6 @@
 # Modelo de Datos en Firebase
 
-Versión 18.13.1
+Versión 19.0.0
 
 ## Clasificación de Cambios
 - Cambios mayores
@@ -24,19 +24,23 @@ Versión 18.13.1
 ## Descripción del Modelo de Datos
 
 ```txt
-users
+clients
 	uid: string
 	name: string
 	last_name: string
-	type: "owner" | "member" | "receptionist"
-	birth_date: timestamp
 	email: string
+
+	sample_class_date: timestamp?
+
+members
+	uid: string
+	birth_date: timestamp
 	phone: string
 	photo_url: string?
 	legal_data_are_theirs: boolean
 	registration_payed: boolean
 
-	membership_plan_id: number?
+	membership_plan_ref: reference?
 
 	guardian_name: string?
 	guardian_phone: string?
@@ -44,20 +48,53 @@ users
 	curp_url: string?
 	curp_validated: boolean
 
-	signature_url: string
+	waiver_agreement_url: string
 	ine_back_url: string
 	ine_front_url: string
+
 	ine_back_validated: boolean
 	ine_front_validated: boolean
+	waiver_agreement_validated: boolean
 
-	sample_class_date: timestamp?
+	creation_date: timestamp
+	deletion_date: timestamp?
+
+	renewals/
+		start_date: timestamp
+		end_date: timestamp
+		membership_plan_ref: reference?
+		payment_ref: reference
+		amount: double
+
+		creation_date: timestamp
+		deletion_date: timestamp?
+
+receptionists
+	uid: string
+	name: string
+	last_name: string
+	email: string
+
+	creation_date: timestamp
+	deletion_date: timestamp?
+
+administrators
+	uid: string
+	name: string
+	last_name: string
+	email: string
 
 	creation_date: timestamp
 	deletion_date: timestamp?
 
 membership_plans
-	id: string
-	amount: double
+	uid: string
+	cost: double
+	benefits: string
+	duration: "1d" | "1w" | "1m"
+
+	creation_date: timestamp
+	deletion_date: timestamp?
 
 payments
 	uid: string
@@ -65,17 +102,21 @@ payments
 
 	amount: double
 	currency: "MXN" | "USD"
-	membership_plan_ref: reference?
-	validated: boolean
+	approval_date: timestamp?
 
+	-- mercado-pago only
 	checkout_url: string?
 	status: ("approved" | "rejected")?
 	mercado_pago_payment_id: string?
 	preference_id: string?
-	approval_date: timestamp?
 
-	payment_data_ref: reference
+	-- direct-transfer only
+	reference_id: string?
+
+	-- cash & direct-transfer
+	approver_ref: ref?
 
 	creation_date: timestamp
+	deletion_date: timestamp?
 
 ```
