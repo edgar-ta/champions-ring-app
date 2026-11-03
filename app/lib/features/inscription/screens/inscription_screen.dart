@@ -139,7 +139,7 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
 
     setState(() => _loading = true);
     try {
-      final result = await SignupService.instance.signUp(_formData);
+      final result = await InscriptionService.instance.signUp(_formData);
 
       if (!mounted) return;
       switch (result) {
