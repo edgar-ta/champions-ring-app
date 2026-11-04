@@ -62,13 +62,12 @@ class UserStorageService {
     maxBytes: 5 * 1024 * 1024,
   );
 
-  Future<Result<ImageUploadError, String>> uploadSignature(
-    Uint8List bytes,
-    String format,
-  ) => _upload(
-    bytes,
-    format,
-    path: 'users/$userId/signature',
+  Future<Result<ImageUploadError, String>> uploadLiabilityWaiver(
+    Uint8List pdfBytes,
+  ) => _put(
+    pdfBytes,
+    path: 'users/$userId/liability_waiver.pdf',
+    contentType: 'application/pdf',
     maxBytes: 20 * 1024 * 1024,
   );
 
@@ -82,6 +81,20 @@ class UserStorageService {
     if (!const {'jpg', 'jpeg', 'png', 'webp'}.contains(normalizedFormat)) {
       return Error(errorType: ImageUploadError.invalidFormat);
     }
+    return _put(
+      bytes,
+      path: '$path.$normalizedFormat',
+      contentType: _contentType(normalizedFormat),
+      maxBytes: maxBytes,
+    );
+  }
+
+  Future<Result<ImageUploadError, String>> _put(
+    Uint8List bytes, {
+    required String path,
+    required String contentType,
+    required int maxBytes,
+  }) async {
     if (bytes.isEmpty) {
       return Error(errorType: ImageUploadError.emptyImage);
     }
@@ -90,10 +103,10 @@ class UserStorageService {
     }
 
     try {
-      final reference = storage.child('$path.$normalizedFormat');
+      final reference = storage.child(path);
       await reference.putData(
         bytes,
-        SettableMetadata(contentType: _contentType(normalizedFormat)),
+        SettableMetadata(contentType: contentType),
       );
       return Success(result: await reference.getDownloadURL());
     } on FirebaseException catch (exception) {

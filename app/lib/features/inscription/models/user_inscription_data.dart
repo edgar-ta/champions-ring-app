@@ -71,8 +71,12 @@ class UserInscription_IdData {
 
 class UserInscription_WaiverAgreementData {
   final Uint8List signatureBytes;
+  final DateTime signedAt;
 
-  UserInscription_WaiverAgreementData({required this.signatureBytes});
+  UserInscription_WaiverAgreementData({
+    required this.signatureBytes,
+    required this.signedAt,
+  });
 }
 
 class UserInscription_PlanSelectionData {

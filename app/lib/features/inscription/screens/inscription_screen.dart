@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/services/mercado_pago_checkout_service.dart';
 import '../../../core/utils/result.dart';
 import '../models/user_inscription_data.dart';
 import '../services/inscription_service.dart';
@@ -11,8 +12,8 @@ import 'register_personal_data_screen.dart';
 import 'register_plan_selection_screen.dart';
 import 'register_waiver_agreement_screen.dart';
 import '../../home/screens/home_screen.dart';
+
 import 'package:cloud_functions/cloud_functions.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:champions_ring_app/core/models/core_user.dart'
     show CorePaymentMethod;
 
@@ -94,65 +95,6 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
         () => _formData = _formData.copyWith(paymentSelectionData: data),
       );
 
-  
-  Future<void> _openMercadoPagoCheckout(int membershipPlanId) async {
-    final membershipType = switch (membershipPlanId) {
-      1 => 'day',
-      2 => 'week',
-      3 => 'month',
-      _ => null,
-    };
-
-    if (membershipType == null) {
-      throw Exception('Selecciona un plan válido para pagar en línea.');
-    }
-
-    final callable = FirebaseFunctions.instanceFor(
-      region: 'us-central1',
-    ).httpsCallable('createMembershipCheckout');
-
-    final response = await callable.call<Map<String, dynamic>>({
-      'membershipType': membershipType,
-    });
-
-    final data = response.data;
-
-    // Para pruebas, utiliza el checkout de prueba si está disponible.
-    // En producción, utiliza checkoutUrl.
-    final checkoutUrl =
-        data['sandboxCheckoutUrl'] as String? ??
-        data['checkoutUrl'] as String?;
-
-    if (checkoutUrl == null || checkoutUrl.isEmpty) {
-      throw Exception('Firebase no devolvió la URL de pago.');
-    }
-
-    final uri = Uri.tryParse(checkoutUrl);
-
-    
-    const allowedHosts = {
-      'www.mercadopago.com.mx',
-      'sandbox.mercadopago.com.mx',
-    };
-    
-    if (uri == null ||
-        uri.scheme != 'https' ||
-        !allowedHosts.contains(uri.host) ||
-        uri.userInfo.isNotEmpty) {
-      throw Exception('La URL de pago no es válida.');
-    }
-
-
-    final opened = await launchUrl(
-      uri,
-      mode: LaunchMode.externalApplication,
-    );
-
-    if (!opened) {
-      throw Exception('No se pudo abrir Mercado Pago.');
-    }
-  }
-
   Future<void> _complete() async {
     final personal = _formData.personalData;
     final id = _formData.idData;
@@ -204,31 +146,33 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
           final payment = _formData.paymentSelectionData!;
           final plan = _formData.planSelectionData!;
 
-          var checkoutError = false;
+          String? checkoutError;
 
           if (payment.paymentMethod == CorePaymentMethod.mercadoPago &&
               plan.membershipPlanId != 0) {
             try {
-              await _openMercadoPagoCheckout(plan.membershipPlanId);
+              await MercadoPagoCheckoutService.open(plan.membershipPlanId);
+            } on FirebaseFunctionsException catch (e) {
+              checkoutError = e.message ?? e.code;
+              debugPrint('Error al crear el checkout: ${e.code} ${e.message}');
             } catch (e) {
-              checkoutError = true;
+              checkoutError = '$e';
               debugPrint('Error al crear el checkout: $e');
             }
           }
 
           if (!mounted) return;
 
-          final message = checkoutError
-              ? 'Tu cuenta se creó, pero no se pudo abrir el pago. '
-                  'Inicia sesión e intenta pagar nuevamente.'
+          final message = checkoutError != null
+              ? 'Tu cuenta se creó, pero no se pudo abrir el pago '
+                    '($checkoutError). Inicia sesión e intenta pagar nuevamente.'
               : payment.paymentMethod == CorePaymentMethod.mercadoPago &&
-                      plan.membershipPlanId != 0
-                  ? 'Cuenta creada. Completa tu pago en Mercado Pago.'
-                  : 'Registro completado. Tu sesión está iniciada.';
+                    plan.membershipPlanId != 0
+              ? 'Cuenta creada. Completa tu pago en Mercado Pago.'
+              : 'Registro completado. Tu sesión está iniciada.';
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(message)),
-          );
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(message)));
 
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (_) => const HomeScreen()),

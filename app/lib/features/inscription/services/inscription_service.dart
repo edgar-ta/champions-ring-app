@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:champions_ring_app/core/models/core_date.dart';
 import 'package:champions_ring_app/core/models/core_user.dart';
@@ -6,6 +7,7 @@ import 'package:champions_ring_app/core/firebase/firestore_instance.dart';
 import 'package:champions_ring_app/core/services/user_storage_service.dart';
 import 'package:champions_ring_app/core/utils/result.dart';
 import 'package:champions_ring_app/features/inscription/models/user_inscription_data.dart';
+import 'package:champions_ring_app/features/inscription/services/liability_waiver_pdf.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -18,7 +20,8 @@ enum UserInscriptionError {
   profilePictureUploadFailed('No se pudo subir la foto de perfil.'),
   ineFrontUploadFailed('No se pudo subir el anverso de la INE.'),
   ineBackUploadFailed('No se pudo subir el reverso de la INE.'),
-  signatureUploadFailed('No se pudo subir la firma de la responsiva.'),
+  waiverGenerationFailed('No se pudo generar la carta responsiva firmada.'),
+  waiverUploadFailed('No se pudo subir la carta responsiva firmada.'),
   storageUnauthenticated('La sesión no permite subir archivos.'),
   storageUnauthorized('No hay permisos para subir los archivos.'),
   storageQuotaExceeded('Se agotó la cuota de almacenamiento disponible.'),
@@ -92,9 +95,22 @@ class SignupService {
         storage.uploadIneBack(id.ineBackBytes!, id.ineBackFormat!),
         UserInscriptionError.ineBackUploadFailed,
       );
-      final signatureUrl = await _uploadUrl(
-        storage.uploadSignature(waiver.signatureBytes, 'png'),
-        UserInscriptionError.signatureUploadFailed,
+      final Uint8List waiverPdf;
+      try {
+        waiverPdf = await buildSignedLiabilityWaiverPdf(
+          personal: personal,
+          signatureBytes: waiver.signatureBytes,
+          signedAt: waiver.signedAt,
+        );
+      } catch (exception) {
+        throw _UploadFailure(
+          UserInscriptionError.waiverGenerationFailed,
+          exception is Exception ? exception : Exception(exception.toString()),
+        );
+      }
+      final liabilityWaiverUrl = await _uploadUrl(
+        storage.uploadLiabilityWaiver(waiverPdf),
+        UserInscriptionError.waiverUploadFailed,
       );
 
       final coreUser = CoreUser(
@@ -117,7 +133,7 @@ class SignupService {
         phone: personal.phone,
         photoUrl: photoUrl,
         registrationPayed: false,
-        signatureUrl: signatureUrl,
+        liabilityWaiverUrl: liabilityWaiverUrl,
         type: personal.type,
         uid: authenticatedUser.uid,
       );

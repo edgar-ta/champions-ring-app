@@ -7,6 +7,7 @@ import '../widgets/registration_scaffold.dart';
 /// Paso 5: revisa el plan y el importe antes de elegir cómo pagar.
 class RegisterPaymentSummaryScreen extends StatelessWidget {
   static const _enrollmentCost = 120;
+  static const _plansWithEnrollment = {2, 3};
 
   final UserInscription_PlanSelectionData? data;
   final VoidCallback onContinue;
@@ -24,7 +25,11 @@ class RegisterPaymentSummaryScreen extends StatelessWidget {
     );
     final plan = selectedPlan.isEmpty ? null : selectedPlan.first;
     final planCost = plan?.price ?? 0;
-    final total = planCost + _enrollmentCost;
+    // Igual que registrationFeeFor() en functions/src/index.ts:
+    // la inscripción solo se cobra con los planes semana (2) y mes (3).
+    final enrollmentCost =
+        _plansWithEnrollment.contains(plan?.id) ? _enrollmentCost : 0;
+    final total = planCost + enrollmentCost;
 
     return Column(
       children: [
@@ -79,9 +84,9 @@ class RegisterPaymentSummaryScreen extends StatelessWidget {
                       children: [
                         _SummaryRow(label: 'Plan', amount: planCost),
                         const SizedBox(height: 8),
-                        const _SummaryRow(
+                        _SummaryRow(
                           label: 'Inscripción',
-                          amount: _enrollmentCost,
+                          amount: enrollmentCost,
                         ),
                         const Divider(height: 24),
                         _SummaryRow(
