@@ -44,7 +44,7 @@ void main() {
       personalData: personal,
       idData: id ?? completeIdData(),
       planSelectionData: MemberInscription_PlanSelectionData(
-        membershipPlanId: 1,
+        membershipPlanUid: 'plan-uid',
       ),
       paymentSelectionData:
           payment ??
@@ -75,7 +75,7 @@ void main() {
         personalData: personalData(birthDate: DateTime(1990, 1, 1)),
         idData: completeIdData(),
         planSelectionData: MemberInscription_PlanSelectionData(
-          membershipPlanId: 1,
+          membershipPlanUid: 'plan-uid',
         ),
         paymentSelectionData: MemberInscription_PaymentSelectionData(
           paymentMethod: CorePaymentType.cash,
@@ -107,7 +107,7 @@ void main() {
           ineBackFormat: null,
         ),
         planSelectionData: MemberInscription_PlanSelectionData(
-          membershipPlanId: 1,
+          membershipPlanUid: 'plan-uid',
         ),
         paymentSelectionData: MemberInscription_PaymentSelectionData(
           paymentMethod: CorePaymentType.cash,
@@ -158,7 +158,7 @@ void main() {
         personalData: personal,
         idData: completeIdData(),
         planSelectionData: MemberInscription_PlanSelectionData(
-          membershipPlanId: 1,
+          membershipPlanUid: 'plan-uid',
         ),
         paymentSelectionData: null,
       );

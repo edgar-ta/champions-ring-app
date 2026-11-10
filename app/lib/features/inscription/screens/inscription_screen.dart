@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/models/core_membership_plan.dart';
+import '../../../core/repositories/core_membership_plan_repository.dart';
 import '../../../core/utils/result.dart';
 import '../models/member_inscription_data.dart';
 import '../services/inscription_service.dart';
@@ -27,6 +29,9 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
   late MemberInscriptionData _formData;
   int _step = 0;
   bool _loading = false;
+  List<CoreMembershipPlan>? _membershipPlans;
+  bool _isLoadingMembershipPlans = false;
+  Object? _membershipPlanLoadError;
 
   bool get _isReturningMember =>
       _formData.previousInscriptionData?.previouslySignedIn == true;
@@ -48,11 +53,42 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
   void _goToStep(int step) {
     if (step < 0 || step >= _totalSteps) return;
     setState(() => _step = step);
+    if (_isMembershipPlanStep(step) &&
+        _membershipPlans == null &&
+        !_isLoadingMembershipPlans) {
+      _loadActiveMembershipPlans();
+    }
     _pages.animateToPage(
       step,
       duration: const Duration(milliseconds: 250),
       curve: Curves.easeInOut,
     );
+  }
+
+  bool _isMembershipPlanStep(int step) =>
+      step == (_isReturningMember ? 4 : 3);
+
+  Future<void> _loadActiveMembershipPlans() async {
+    setState(() {
+      _isLoadingMembershipPlans = true;
+      _membershipPlanLoadError = null;
+    });
+
+    try {
+      final plans = await CoreMembershipPlanRepository()
+          .getActiveMembershipPlans();
+      if (!mounted) return;
+      setState(() {
+        _membershipPlans = plans;
+        _isLoadingMembershipPlans = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _membershipPlanLoadError = error;
+        _isLoadingMembershipPlans = false;
+      });
+    }
   }
 
   void _back() {
@@ -269,6 +305,10 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
                       onContinue: () => _goToStep(4),
                     ),
                   RegisterPlanSelectionScreen(
+                    plans: _membershipPlans,
+                    isLoading: _isLoadingMembershipPlans,
+                    loadError: _membershipPlanLoadError,
+                    onRetry: _loadActiveMembershipPlans,
                     data: _formData.planSelectionData,
                     onDataChanged: _updatePlanData,
                     onContinue: _complete,
@@ -297,11 +337,19 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
                       onContinue: () => _goToStep(3),
                     ),
                   RegisterPlanSelectionScreen(
+                    plans: _membershipPlans,
+                    isLoading: _isLoadingMembershipPlans,
+                    loadError: _membershipPlanLoadError,
+                    onRetry: _loadActiveMembershipPlans,
                     data: _formData.planSelectionData,
                     onDataChanged: _updatePlanData,
                     onContinue: () => _goToStep(4),
                   ),
                   RegisterPaymentSummaryScreen(
+                    plans: _membershipPlans,
+                    isLoading: _isLoadingMembershipPlans,
+                    loadError: _membershipPlanLoadError,
+                    onRetry: _loadActiveMembershipPlans,
                     data: _formData.planSelectionData,
                     onContinue: () => _goToStep(5),
                   ),

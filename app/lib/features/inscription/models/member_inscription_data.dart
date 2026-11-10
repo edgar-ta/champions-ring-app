@@ -86,9 +86,9 @@ class MemberInscription_IdData {
 }
 
 class MemberInscription_PlanSelectionData {
-  final int membershipPlanId;
+  final String membershipPlanUid;
 
-  MemberInscription_PlanSelectionData({required this.membershipPlanId});
+  const MemberInscription_PlanSelectionData({required this.membershipPlanUid});
 }
 
 class MemberInscription_PaymentSelectionData {

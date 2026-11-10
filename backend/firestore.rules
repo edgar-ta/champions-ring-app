@@ -1,0 +1,36 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Members
+    match /members/{memberUid} {
+
+      // A member can read their own information.
+      allow read: if request.auth != null
+        && request.auth.uid == memberUid;
+
+      // A member can create their own document.
+      allow create: if request.auth != null
+        && request.auth.uid == memberUid;
+
+      // A member can update their own information.
+      allow update: if request.auth != null
+        && request.auth.uid == memberUid;
+
+      // Members cannot delete documents.
+      allow delete: if false;
+
+      // Renewals
+      match /renewals/{renewalUid} {
+
+        // A member can read their own renewals.
+        allow read: if request.auth != null
+          && request.auth.uid == memberUid;
+
+        // Members cannot create, modify or delete renewals.
+        allow write: if false;
+      }
+    }
+  }
+}

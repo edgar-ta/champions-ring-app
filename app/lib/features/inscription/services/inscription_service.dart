@@ -1,18 +1,19 @@
 import 'dart:async';
 
-import 'package:champions_ring_app/core/firebase/firestore_instance.dart';
 import 'package:champions_ring_app/core/models/core_client.dart';
 import 'package:champions_ring_app/core/models/core_date.dart';
 import 'package:champions_ring_app/core/models/core_member.dart';
 import 'package:champions_ring_app/core/models/core_payment.dart'
     show CorePaymentCurrency, CorePaymentType;
+import 'package:champions_ring_app/core/models/core_renewal.dart';
 import 'package:champions_ring_app/core/repositories/core_client_repository.dart';
 import 'package:champions_ring_app/core/repositories/core_member_repository.dart';
+import 'package:champions_ring_app/core/repositories/core_membership_plan_repository.dart';
 import 'package:champions_ring_app/core/repositories/core_payment_repository.dart';
+import 'package:champions_ring_app/core/repositories/core_renewal_repository.dart';
 import 'package:champions_ring_app/core/services/member_storage_service.dart';
 import 'package:champions_ring_app/core/utils/result.dart';
 import 'package:champions_ring_app/features/inscription/models/member_inscription_data.dart';
-import 'package:champions_ring_app/features/inscription/models/membership_plan.dart';
 import 'package:champions_ring_app/features/inscription/models/payment.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -93,6 +94,16 @@ class InscriptionService {
 
     User? user;
     try {
+      final membershipPlanRepository = CoreMembershipPlanRepository();
+      final selectedPlan = await membershipPlanRepository
+          .getById(data.planSelectionData!.membershipPlanUid)
+          .timeout(const Duration(seconds: 15));
+      if (selectedPlan.deletionDate != null) {
+        throw StateError(
+          'Membership plan "${selectedPlan.uid}" is no longer active.',
+        );
+      }
+
       final credential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(
             email: personal.email,
@@ -141,6 +152,9 @@ class InscriptionService {
         photoUrl: photoUrl,
         legalDataAreTheirs: personal.isOfLegalAge,
         inscriptionPayed: false,
+        membershipPlanRef: membershipPlanRepository.myCollection.doc(
+          selectedPlan.uid,
+        ),
         guardianName: personal.isOfLegalAge ? null : personal.guardianName,
         guardianPhone: personal.isOfLegalAge ? null : personal.guardianPhone,
         guardianRelationship: personal.isOfLegalAge
@@ -152,7 +166,7 @@ class InscriptionService {
         ineBackValidated: false,
         ineFrontUrl: ineFrontUrl,
         ineFrontValidated: false,
-        creationDate: CoreDate.fromFieldValue(FieldValue.serverTimestamp()),
+        creationDate: CoreDate.ofWriteTime(),
       );
       await CoreMemberRepository()
           .upsert(coreMember)
@@ -164,25 +178,13 @@ class InscriptionService {
 
         switch (data.paymentSelectionData!.paymentMethod) {
           case CorePaymentType.cash:
-            final selectedPlanId = data.planSelectionData!.membershipPlanId;
-            final selectedPlan = memberships.where(
-              (plan) => plan.id == selectedPlanId,
-            );
-            if (selectedPlan.isEmpty) {
-              throw StateError(
-                'Membership plan "$selectedPlanId" was not found.',
-              );
-            }
-
             final cashPayment = CashPayment(
               uid: paymentUid,
-              amount: selectedPlan.first.price.toDouble(),
+              amount: selectedPlan.cost,
               currency: CorePaymentCurrency.mxn,
-              creationDate: CoreDate.fromFieldValue(
-                FieldValue.serverTimestamp(),
-              ),
+              creationDate: CoreDate.ofWriteTime(),
             );
-            await CorePaymentRepository()
+            await paymentRepository
                 .upsert(cashPayment.toCorePayment())
                 .timeout(const Duration(seconds: 15));
             break;
@@ -191,7 +193,24 @@ class InscriptionService {
           case CorePaymentType.mercadoPago:
             break;
         }
-
+        CoreRenewalRepository renewalRepository = CoreRenewalRepository(
+          memberUid: uid,
+        );
+        await renewalRepository
+            .upsert(
+              CoreRenewal(
+                uid: renewalRepository.nextUid,
+                startDate: CoreDate.ofWriteTime(),
+                endDate: CoreDate.ofServerControlledDate(),
+                membershipPlanRef: membershipPlanRepository.myCollection.doc(
+                  selectedPlan.uid,
+                ),
+                paymentRef: paymentRepository.myCollection.doc(paymentUid),
+                amount: selectedPlan.cost,
+                creationDate: CoreDate.ofWriteTime(),
+              ),
+            )
+            .timeout(const Duration(seconds: 15));
         // luego de definir la id del pago, tengo que crear la renovación
       }
 

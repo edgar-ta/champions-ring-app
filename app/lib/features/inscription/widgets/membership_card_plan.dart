@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../models/membership_plan.dart';
+import '../../../core/models/core_membership_plan.dart';
 import 'selectable_card.dart';
 
 /// Tarjeta seleccionable de una membresía (con radio, precio y beneficios).
 class MembershipPlanCard extends StatelessWidget {
-  final MembershipPlan membershipPlan;
+  final CoreMembershipPlan membershipPlan;
   final bool isSelected;
   final VoidCallback onTap;
 
@@ -18,9 +18,12 @@ class MembershipPlanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final acento = isSelected
+    final accent = isSelected
         ? const Color(0xFFEA3A3F)
         : const Color(0xFF7A7A7A);
+    final price = membershipPlan.cost == membershipPlan.cost.roundToDouble()
+        ? membershipPlan.cost.toStringAsFixed(0)
+        : membershipPlan.cost.toStringAsFixed(2);
 
     return SelectableCard(
       isSelected: isSelected,
@@ -40,7 +43,7 @@ class MembershipPlanCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
-                  membershipPlan.label,
+                  membershipPlan.duration.serialization.toUpperCase(),
                   style: TextStyle(
                     fontSize: 9,
                     fontWeight: FontWeight.w800,
@@ -54,12 +57,12 @@ class MembershipPlanCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            membershipPlan.title,
+            membershipPlan.name,
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 2),
           Text(
-            membershipPlan.validity,
+            _durationDescription(membershipPlan.duration),
             style: const TextStyle(fontSize: 12, color: Color(0xFF6B6B6B)),
           ),
           const SizedBox(height: 10),
@@ -68,7 +71,7 @@ class MembershipPlanCard extends StatelessWidget {
             textBaseline: TextBaseline.alphabetic,
             children: [
               Text(
-                '\$${membershipPlan.price}',
+                '\$$price',
                 style: const TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.w800,
@@ -92,27 +95,31 @@ class MembershipPlanCard extends StatelessWidget {
                 ? const Color(0xFFF2C4C7)
                 : const Color(0xFFE3E3E3),
           ),
-          const SizedBox(height: 12),
-          ...membershipPlan.benefits.map(
-            (b) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.check_circle, size: 16, color: acento),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      b,
-                      style: const TextStyle(fontSize: 12.5, height: 1.2),
-                    ),
+          if (membershipPlan.benefits.trim().isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.check_circle, size: 16, color: accent),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    membershipPlan.benefits,
+                    style: const TextStyle(fontSize: 12.5, height: 1.2),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ),
+          ],
         ],
       ),
     );
   }
+
+  String _durationDescription(CoreMembershipPlanDuration duration) =>
+      switch (duration) {
+        CoreMembershipPlanDuration.oneDay => 'Válido por 1 día natural',
+        CoreMembershipPlanDuration.oneWeek => 'Válido por 7 días naturales',
+        CoreMembershipPlanDuration.oneMonth => 'Válido por 1 mes',
+      };
 }

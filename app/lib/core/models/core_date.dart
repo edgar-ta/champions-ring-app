@@ -12,9 +12,13 @@ class CoreDate {
 
   const CoreDate.fromTimestamp(Timestamp value) : this._(timestamp: value);
 
-  const CoreDate.fromFieldValue(FieldValue value) : this._(fieldValue: value);
+  CoreDate.ofWriteTime() : this._(fieldValue: FieldValue.serverTimestamp());
+
+  const CoreDate.ofServerControlledDate() : this._();
 
   /// Valor que puede agregarse directamente a un mapa de Firestore.
   Object toFirebaseValue() =>
-      fieldValue ?? timestamp ?? Timestamp.fromDate(dateTime!);
+      fieldValue ??
+      timestamp ??
+      (dateTime != null ? Timestamp.fromDate(dateTime!) : Timestamp.now());
 }

@@ -1,45 +1,83 @@
 import 'package:flutter/material.dart';
 
-import '../models/membership_plan.dart';
+import '../../../core/models/core_membership_plan.dart';
 import '../models/member_inscription_data.dart';
 import '../widgets/membership_card_plan.dart';
 import '../widgets/registration_scaffold.dart';
 
 /// Paso 4: selección del plan de membresía.
 class RegisterPlanSelectionScreen extends StatelessWidget {
+  final List<CoreMembershipPlan>? plans;
+  final bool isLoading;
+  final Object? loadError;
+  final VoidCallback onRetry;
   final MemberInscription_PlanSelectionData? data;
   final ValueChanged<MemberInscription_PlanSelectionData> onDataChanged;
   final VoidCallback onContinue;
 
   const RegisterPlanSelectionScreen({
     super.key,
+    required this.plans,
+    required this.isLoading,
+    required this.loadError,
+    required this.onRetry,
     required this.data,
     required this.onDataChanged,
     required this.onContinue,
   });
 
   @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      Expanded(
-        child: ListView(
+  Widget build(BuildContext context) {
+    final availablePlans = plans ?? const <CoreMembershipPlan>[];
+    final hasSelectedPlan = availablePlans.any(
+      (plan) => plan.uid == data?.membershipPlanUid,
+    );
+
+    return Column(
+      children: [
+        Expanded(child: _buildPlanContent(availablePlans)),
+        RedButton(
+          text: 'CONTINUAR',
+          onPressed: hasSelectedPlan ? onContinue : null,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPlanContent(List<CoreMembershipPlan> availablePlans) {
+    if (isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (loadError != null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            for (final plan in memberships) ...[
-              MembershipPlanCard(
-                membershipPlan: plan,
-                isSelected: data?.membershipPlanId == plan.id,
-                onTap: () => onDataChanged(
-                  MemberInscription_PlanSelectionData(
-                    membershipPlanId: plan.id,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-            ],
+            const Text('No se pudieron cargar los planes de membresía.'),
+            TextButton(onPressed: onRetry, child: const Text('REINTENTAR')),
           ],
         ),
-      ),
-      RedButton(text: 'CONTINUAR', onPressed: data == null ? null : onContinue),
-    ],
-  );
+      );
+    }
+    if (availablePlans.isEmpty) {
+      return const Center(
+        child: Text('No hay planes de membresía activos disponibles.'),
+      );
+    }
+
+    return ListView(
+      children: [
+        for (final plan in availablePlans) ...[
+          MembershipPlanCard(
+            membershipPlan: plan,
+            isSelected: data?.membershipPlanUid == plan.uid,
+            onTap: () => onDataChanged(
+              MemberInscription_PlanSelectionData(membershipPlanUid: plan.uid),
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+      ],
+    );
+  }
 }

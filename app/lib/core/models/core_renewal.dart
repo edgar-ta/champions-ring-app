@@ -8,7 +8,7 @@ class CoreRenewal extends FirestoreEntity {
   final CoreDate startDate;
   final CoreDate endDate;
 
-  final DocumentReference<Map<String, dynamic>>? membershipPlanRef;
+  final DocumentReference<Map<String, dynamic>> membershipPlanRef;
   final DocumentReference<Map<String, dynamic>> paymentRef;
 
   final double amount;
@@ -20,7 +20,7 @@ class CoreRenewal extends FirestoreEntity {
     required this.uid,
     required this.startDate,
     required this.endDate,
-    this.membershipPlanRef,
+    required this.membershipPlanRef,
     required this.paymentRef,
     required this.amount,
     required this.creationDate,

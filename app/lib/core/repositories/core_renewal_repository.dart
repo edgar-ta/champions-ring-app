@@ -48,8 +48,7 @@ class CoreRenewalRepository extends BaseRepository<CoreRenewal> {
     }
 
     final membershipPlanRef = renewal.membershipPlanRef;
-    if (membershipPlanRef != null &&
-        membershipPlanRef.parent.path != 'membership_plans') {
+    if (membershipPlanRef.parent.path != 'membership_plans') {
       throw ArgumentError.value(
         membershipPlanRef.path,
         'renewal.membershipPlanRef',
@@ -105,7 +104,7 @@ class CoreRenewalRepository extends BaseRepository<CoreRenewal> {
       startDate: CoreDate.fromTimestamp(startDate),
       endDate: CoreDate.fromTimestamp(endDate),
       membershipPlanRef:
-          data['membershipPlanRef'] as DocumentReference<Map<String, dynamic>>?,
+          data['membershipPlanRef'] as DocumentReference<Map<String, dynamic>>,
       paymentRef: data['paymentRef'] as DocumentReference<Map<String, dynamic>>,
       amount: (data['amount'] as num).toDouble(),
       creationDate: CoreDate.fromTimestamp(creationDate),

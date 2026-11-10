@@ -36,6 +36,7 @@ class CoreMembershipPlan extends FirestoreEntity {
   Map<String, dynamic> toFirebaseMap() {
     return {
       'uid': uid,
+      'name': name,
       'cost': cost,
       'benefits': benefits,
       'duration': duration.serialization,
