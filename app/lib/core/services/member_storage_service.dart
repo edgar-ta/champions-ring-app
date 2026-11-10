@@ -18,10 +18,10 @@ enum ImageUploadError {
   other,
 }
 
-class UserStorageService {
+class MemberStorageService {
   final String userId;
 
-  UserStorageService({required this.userId});
+  MemberStorageService({required this.userId});
 
   Reference get storage => FirebaseStorage.instance.ref();
 

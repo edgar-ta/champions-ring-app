@@ -5,15 +5,15 @@ import 'package:champions_ring_app/core/models/core_user.dart'
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../models/user_inscription_data.dart';
+import '../models/member_inscription_data.dart';
 import '../../../shared/widgets/phone_number_input.dart';
 
 const Color kRojo = Color(0xFFEA3A3F);
 const Color _gris = Color(0xFF6B6B6B);
 
 class PersonalDataForm extends StatefulWidget {
-  final void Function(UserInscription_PersonalData usuario) onSubmit;
-  final UserInscription_PersonalData? initialData;
+  final void Function(MemberInscription_PersonalData usuario) onSubmit;
+  final MemberInscription_PersonalData? initialData;
 
   const PersonalDataForm({super.key, required this.onSubmit, this.initialData});
 
@@ -55,7 +55,7 @@ class _PersonalDataFormState extends State<PersonalDataForm> {
     }
   }
 
-  void _restoreData(UserInscription_PersonalData? data) {
+  void _restoreData(MemberInscription_PersonalData? data) {
     if (data == null) return;
     _firstNameCtrl.text = data.name;
     _lastNameCtrl.text = data.lastName;
@@ -195,7 +195,7 @@ class _PersonalDataFormState extends State<PersonalDataForm> {
     }
 
     widget.onSubmit(
-      UserInscription_PersonalData(
+      MemberInscription_PersonalData(
         name: _firstNameCtrl.text.trim(),
         lastName: _lastNameCtrl.text.trim(),
         type: widget.initialData?.type ?? CoreUserType.member,

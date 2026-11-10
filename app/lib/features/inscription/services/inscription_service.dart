@@ -1,15 +1,23 @@
 import 'dart:async';
 
-import 'package:champions_ring_app/core/models/core_date.dart';
-import 'package:champions_ring_app/core/models/core_user.dart';
 import 'package:champions_ring_app/core/firebase/firestore_instance.dart';
-import 'package:champions_ring_app/core/services/user_storage_service.dart';
+import 'package:champions_ring_app/core/models/core_client.dart';
+import 'package:champions_ring_app/core/models/core_date.dart';
+import 'package:champions_ring_app/core/models/core_member.dart';
+import 'package:champions_ring_app/core/models/core_payment.dart'
+    show CorePaymentCurrency, CorePaymentType;
+import 'package:champions_ring_app/core/repositories/core_client_repository.dart';
+import 'package:champions_ring_app/core/repositories/core_member_repository.dart';
+import 'package:champions_ring_app/core/repositories/core_payment_repository.dart';
+import 'package:champions_ring_app/core/services/member_storage_service.dart';
 import 'package:champions_ring_app/core/utils/result.dart';
-import 'package:champions_ring_app/features/inscription/models/user_inscription_data.dart';
+import 'package:champions_ring_app/features/inscription/models/member_inscription_data.dart';
+import 'package:champions_ring_app/features/inscription/models/membership_plan.dart';
+import 'package:champions_ring_app/features/inscription/models/payment.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-enum UserInscriptionError {
+enum MemberInscriptionError {
   missingInscriptionData('Faltan datos requeridos para completar el registro.'),
   emailAlreadyInUse('Ese correo electrónico ya está registrado.'),
   invalidEmail('El correo electrónico no es válido.'),
@@ -19,7 +27,6 @@ enum UserInscriptionError {
   ineFrontUploadFailed('No se pudo subir el anverso de la INE.'),
   ineBackUploadFailed('No se pudo subir el reverso de la INE.'),
   curpUploadFailed('No se pudo subir el CURP del usuario.'),
-  signatureUploadFailed('No se pudo subir la firma de la responsiva.'),
   storageUnauthenticated('La sesión no permite subir archivos.'),
   storageUnauthorized('No hay permisos para subir los archivos.'),
   storageQuotaExceeded('Se agotó la cuota de almacenamiento disponible.'),
@@ -36,7 +43,7 @@ enum UserInscriptionError {
   other('Ocurrió un error inesperado durante el registro.');
 
   final String message;
-  const UserInscriptionError(this.message);
+  const MemberInscriptionError(this.message);
 }
 
 /// Coordina la creación de la cuenta, la subida de archivos y el perfil Firestore.
@@ -47,15 +54,16 @@ class InscriptionService {
     return InscriptionService._instance!;
   }
 
-  Future<Result<UserInscriptionError, String>> signUp(
-    UserInscriptionData data,
-  ) async {
+  MemberInscriptionError? _validateMemberInscriptionData(
+    MemberInscriptionData data,
+  ) {
     final personal = data.personalData;
     final id = data.idData;
-    final waiver = data.waiverAgreementData;
+    final previousInscription = data.previousInscriptionData;
     final plan = data.planSelectionData;
     final payment = data.paymentSelectionData;
-    if (personal == null ||
+    if (previousInscription == null ||
+        personal == null ||
         id == null ||
         id.ineFrontBytes == null ||
         id.ineFrontFormat == null ||
@@ -63,11 +71,25 @@ class InscriptionService {
         id.ineBackFormat == null ||
         (!personal.isOfLegalAge &&
             (id.curpBytes == null || id.curpFormat == null)) ||
-        waiver == null ||
         plan == null ||
-        payment == null) {
-      return Error(errorType: UserInscriptionError.missingInscriptionData);
+        (!previousInscription.previouslySignedIn && payment == null)) {
+      return MemberInscriptionError.missingInscriptionData;
     }
+
+    return null;
+  }
+
+  Future<Result<MemberInscriptionError, String>> signIn(
+    MemberInscriptionData data,
+  ) async {
+    final validationError = _validateMemberInscriptionData(data);
+    if (validationError != null) {
+      return Error(errorType: validationError);
+    }
+
+    final personal = data.personalData!;
+    final id = data.idData!;
+    final previousInscription = data.previousInscriptionData!;
 
     User? user;
     try {
@@ -78,66 +100,102 @@ class InscriptionService {
           );
       final authenticatedUser = credential.user;
       if (authenticatedUser == null) {
-        return Error(errorType: UserInscriptionError.userCreationFailed);
+        return Error(errorType: MemberInscriptionError.userCreationFailed);
       }
       user = authenticatedUser;
 
-      final storage = UserStorageService(userId: authenticatedUser.uid);
+      final storage = MemberStorageService(userId: authenticatedUser.uid);
       final photoUrl = await _uploadUrl(
         storage.uploadProfilePicture(personal.photoBytes, personal.photoFormat),
-        UserInscriptionError.profilePictureUploadFailed,
+        MemberInscriptionError.profilePictureUploadFailed,
       );
       final ineFrontUrl = await _uploadUrl(
         storage.uploadIneFront(id.ineFrontBytes!, id.ineFrontFormat!),
-        UserInscriptionError.ineFrontUploadFailed,
+        MemberInscriptionError.ineFrontUploadFailed,
       );
       final ineBackUrl = await _uploadUrl(
         storage.uploadIneBack(id.ineBackBytes!, id.ineBackFormat!),
-        UserInscriptionError.ineBackUploadFailed,
+        MemberInscriptionError.ineBackUploadFailed,
       );
       final curpUrl = !personal.isOfLegalAge
           ? await _uploadUrl(
               storage.uploadCurp(id.curpBytes!, id.curpFormat!),
-              UserInscriptionError.curpUploadFailed,
+              MemberInscriptionError.curpUploadFailed,
             )
           : null;
-      final signatureUrl = await _uploadUrl(
-        storage.uploadSignature(waiver.signatureBytes, 'png'),
-        UserInscriptionError.signatureUploadFailed,
-      );
-
-      final coreUser = CoreUser(
-        birthDate: personal.birthDate,
-        creationDate: CoreDate.fromFieldValue(FieldValue.serverTimestamp()),
-        deletionDate: null,
+      final uid = authenticatedUser.uid;
+      final coreClient = CoreClient(
+        uid: uid,
+        name: personal.name,
+        lastName: personal.lastName,
         email: personal.email,
+      );
+      await CoreClientRepository()
+          .upsertCoreClient(coreClient)
+          .timeout(const Duration(seconds: 15));
+
+      final coreMember = CoreMember(
+        uid: uid,
+        birthDate: CoreDate.fromDateTime(personal.birthDate),
+        phone: personal.phone,
+        photoUrl: photoUrl,
+        legalDataAreTheirs: personal.isOfLegalAge,
+        inscriptionPayed: false,
         guardianName: personal.isOfLegalAge ? null : personal.guardianName,
         guardianPhone: personal.isOfLegalAge ? null : personal.guardianPhone,
         guardianRelationship: personal.isOfLegalAge
             ? null
             : personal.guardianRelationship,
         curpUrl: curpUrl,
+        curpValidated: curpUrl == null ? null : false,
         ineBackUrl: ineBackUrl,
+        ineBackValidated: false,
         ineFrontUrl: ineFrontUrl,
-        lastName: personal.lastName,
-        legalDataAreTheirs: personal.isOfLegalAge,
-        membershipPlanId: plan.membershipPlanId,
-        name: personal.name,
-        paymentMethod: payment.paymentMethod,
-        phone: personal.phone,
-        photoUrl: photoUrl,
-        registrationPayed: false,
-        signatureUrl: signatureUrl,
-        type: personal.type,
-        uid: authenticatedUser.uid,
+        ineFrontValidated: false,
+        creationDate: CoreDate.fromFieldValue(FieldValue.serverTimestamp()),
       );
-      await FirestoreInstance.instance
-          .collection('users')
-          .doc(authenticatedUser.uid)
-          .set(coreUser.toFirebaseMap())
+      await CoreMemberRepository()
+          .upsertCoreMember(coreMember)
           .timeout(const Duration(seconds: 15));
 
-      return Success(result: authenticatedUser.uid);
+      if (!previousInscription.previouslySignedIn) {
+        CorePaymentRepository paymentRepository = CorePaymentRepository();
+        String paymentUid = paymentRepository.nextId;
+
+        switch (data.paymentSelectionData!.paymentMethod) {
+          case CorePaymentType.cash:
+            final selectedPlanId = data.planSelectionData!.membershipPlanId;
+            final selectedPlan = memberships.where(
+              (plan) => plan.id == selectedPlanId,
+            );
+            if (selectedPlan.isEmpty) {
+              throw StateError(
+                'Membership plan "$selectedPlanId" was not found.',
+              );
+            }
+
+            final cashPayment = CashPayment(
+              uid: paymentUid,
+              amount: selectedPlan.first.price.toDouble(),
+              currency: CorePaymentCurrency.mxn,
+              creationDate: CoreDate.fromFieldValue(
+                FieldValue.serverTimestamp(),
+              ),
+            );
+            await CorePaymentRepository()
+                .upsertCorePayment(cashPayment.toCorePayment())
+                .timeout(const Duration(seconds: 15));
+            break;
+          case CorePaymentType.directTransfer:
+            break;
+          case CorePaymentType.mercadoPago:
+            break;
+        }
+
+        // luego de definir la id del pago, tengo que crear la renovación
+      }
+
+      return Success(result: uid);
     } on _UploadFailure catch (failure) {
       await _deleteCreatedUser(user);
       return Error(errorType: failure.error, exception: failure.cause);
@@ -147,7 +205,7 @@ class InscriptionService {
     } on TimeoutException catch (exception) {
       await _deleteCreatedUser(user);
       return Error(
-        errorType: UserInscriptionError.firestoreTimeout,
+        errorType: MemberInscriptionError.firestoreTimeout,
         exception: exception,
       );
     } on FirebaseException catch (exception) {
@@ -159,7 +217,7 @@ class InscriptionService {
     } catch (exception) {
       await _deleteCreatedUser(user);
       return Error(
-        errorType: UserInscriptionError.other,
+        errorType: MemberInscriptionError.other,
         exception: exception is Exception
             ? exception
             : Exception(exception.toString()),
@@ -169,49 +227,49 @@ class InscriptionService {
 
   Future<String> _uploadUrl(
     Future<Result<ImageUploadError, String>> upload,
-    UserInscriptionError stageError,
+    MemberInscriptionError stageError,
   ) async => switch (await upload) {
     Success<ImageUploadError, String>(:final result) => result,
     Error<ImageUploadError, String>(:final errorType, :final exception) =>
       throw _UploadFailure(_mapStorageError(errorType, stageError), exception),
   };
 
-  UserInscriptionError _mapStorageError(
+  MemberInscriptionError _mapStorageError(
     ImageUploadError error,
-    UserInscriptionError stageError,
+    MemberInscriptionError stageError,
   ) => switch (error) {
-    ImageUploadError.badInternet => UserInscriptionError.badInternet,
+    ImageUploadError.badInternet => MemberInscriptionError.badInternet,
     ImageUploadError.unauthenticatedUser =>
-      UserInscriptionError.storageUnauthenticated,
+      MemberInscriptionError.storageUnauthenticated,
     ImageUploadError.unauthorizedUser =>
-      UserInscriptionError.storageUnauthorized,
+      MemberInscriptionError.storageUnauthorized,
     ImageUploadError.firebaseStorageQuotaExceeded =>
-      UserInscriptionError.storageQuotaExceeded,
+      MemberInscriptionError.storageQuotaExceeded,
     ImageUploadError.invalidFormat =>
-      UserInscriptionError.unsupportedImageFormat,
-    ImageUploadError.emptyImage => UserInscriptionError.emptyImage,
-    ImageUploadError.fileTooLarge => UserInscriptionError.fileTooLarge,
-    ImageUploadError.canceled => UserInscriptionError.uploadCanceled,
+      MemberInscriptionError.unsupportedImageFormat,
+    ImageUploadError.emptyImage => MemberInscriptionError.emptyImage,
+    ImageUploadError.fileTooLarge => MemberInscriptionError.fileTooLarge,
+    ImageUploadError.canceled => MemberInscriptionError.uploadCanceled,
     ImageUploadError.storageConfiguration =>
-      UserInscriptionError.storageConfiguration,
+      MemberInscriptionError.storageConfiguration,
     ImageUploadError.other => stageError,
   };
 
-  UserInscriptionError _mapAuthError(FirebaseAuthException exception) =>
+  MemberInscriptionError _mapAuthError(FirebaseAuthException exception) =>
       switch (exception.code) {
-        'email-already-in-use' => UserInscriptionError.emailAlreadyInUse,
-        'invalid-email' => UserInscriptionError.invalidEmail,
-        'weak-password' => UserInscriptionError.weakPassword,
-        'network-request-failed' => UserInscriptionError.badInternet,
-        _ => UserInscriptionError.userCreationFailed,
+        'email-already-in-use' => MemberInscriptionError.emailAlreadyInUse,
+        'invalid-email' => MemberInscriptionError.invalidEmail,
+        'weak-password' => MemberInscriptionError.weakPassword,
+        'network-request-failed' => MemberInscriptionError.badInternet,
+        _ => MemberInscriptionError.userCreationFailed,
       };
 
-  UserInscriptionError _mapFirestoreError(FirebaseException exception) =>
+  MemberInscriptionError _mapFirestoreError(FirebaseException exception) =>
       switch (exception.code) {
-        'permission-denied' => UserInscriptionError.firestorePermissionDenied,
+        'permission-denied' => MemberInscriptionError.firestorePermissionDenied,
         'unavailable' ||
-        'deadline-exceeded' => UserInscriptionError.firestoreUnavailable,
-        _ => UserInscriptionError.firestoreFailed,
+        'deadline-exceeded' => MemberInscriptionError.firestoreUnavailable,
+        _ => MemberInscriptionError.firestoreFailed,
       };
 
   Future<void> _deleteCreatedUser(User? user) async {
@@ -225,7 +283,7 @@ class InscriptionService {
 }
 
 class _UploadFailure implements Exception {
-  final UserInscriptionError error;
+  final MemberInscriptionError error;
   final Exception? cause;
 
   const _UploadFailure(this.error, this.cause);

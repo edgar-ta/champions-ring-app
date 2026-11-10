@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../models/user_inscription_data.dart';
+import '../models/member_inscription_data.dart';
 import '../widgets/personal_data_form.dart';
 
 /// Paso 1 del registro: captura de los datos personales y foto de perfil.
 class RegisterPersonalDataScreen extends StatelessWidget {
-  final UserInscription_PersonalData? initialData;
-  final ValueChanged<UserInscription_PersonalData> onContinue;
+  final MemberInscription_PersonalData? initialData;
+  final ValueChanged<MemberInscription_PersonalData> onContinue;
 
   const RegisterPersonalDataScreen({
     super.key,

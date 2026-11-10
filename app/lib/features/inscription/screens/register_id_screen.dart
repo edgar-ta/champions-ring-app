@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
-import '../models/user_inscription_data.dart';
+import '../models/member_inscription_data.dart';
 import '../widgets/document_input.dart';
 import '../widgets/registration_scaffold.dart';
 
 /// Paso 2: carga la identificación del usuario o de su tutor y, para menores, su CURP.
 class RegisterIdScreen extends StatefulWidget {
-  final UserInscription_PersonalData personalData;
-  final UserInscription_IdData? data;
-  final ValueChanged<UserInscription_IdData> onDataChanged;
+  final MemberInscription_PersonalData personalData;
+  final MemberInscription_IdData? data;
+  final ValueChanged<MemberInscription_IdData> onDataChanged;
   final VoidCallback onContinue;
 
   const RegisterIdScreen({
@@ -44,7 +44,7 @@ class _RegisterIdScreenState extends State<RegisterIdScreen> {
 
   void _pickFront(PickedDocument document) {
     widget.onDataChanged(
-      (widget.data ?? UserInscription_IdData()).copyWith(
+      (widget.data ?? MemberInscription_IdData()).copyWith(
         ineFrontBytes: document.bytes,
         ineFrontFormat: document.format,
       ),
@@ -53,7 +53,7 @@ class _RegisterIdScreenState extends State<RegisterIdScreen> {
 
   void _pickBack(PickedDocument document) {
     widget.onDataChanged(
-      (widget.data ?? UserInscription_IdData()).copyWith(
+      (widget.data ?? MemberInscription_IdData()).copyWith(
         ineBackBytes: document.bytes,
         ineBackFormat: document.format,
       ),
@@ -62,7 +62,7 @@ class _RegisterIdScreenState extends State<RegisterIdScreen> {
 
   void _pickCurp(PickedDocument document) {
     widget.onDataChanged(
-      (widget.data ?? UserInscription_IdData()).copyWith(
+      (widget.data ?? MemberInscription_IdData()).copyWith(
         curpBytes: document.bytes,
         curpFormat: document.format,
       ),

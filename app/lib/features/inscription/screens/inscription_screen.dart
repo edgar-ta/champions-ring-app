@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/utils/result.dart';
-import '../models/user_inscription_data.dart';
+import '../models/member_inscription_data.dart';
 import '../services/inscription_service.dart';
 import '../widgets/registration_scaffold.dart';
+import 'register_account_validation_notice_screen.dart';
 import 'register_id_screen.dart';
 import 'register_payment_selection_screen.dart';
 import 'register_payment_summary_screen.dart';
 import 'register_personal_data_screen.dart';
 import 'register_plan_selection_screen.dart';
-import 'register_waiver_agreement_screen.dart';
+import 'register_previous_inscription_screen.dart';
 import '../../home/screens/home_screen.dart';
 
-/// Contenedor del wizard: mantiene los datos de cada paso en UserFormData.
+/// Contenedor del wizard: mantiene los datos de cada paso en UserInscriptionData.
 class InscriptionScreen extends StatefulWidget {
   const InscriptionScreen({super.key});
 
@@ -23,14 +24,19 @@ class InscriptionScreen extends StatefulWidget {
 class _InscriptionScreenState extends State<InscriptionScreen> {
   static const _maxDocumentBytes = 20 * 1024 * 1024;
   final _pages = PageController();
-  late UserInscriptionData _formData;
+  late MemberInscriptionData _formData;
   int _step = 0;
   bool _loading = false;
+
+  bool get _isReturningMember =>
+      _formData.previousInscriptionData?.previouslySignedIn == true;
+
+  int get _totalSteps => _isReturningMember ? 5 : 6;
 
   @override
   void initState() {
     super.initState();
-    _formData = UserInscriptionData();
+    _formData = MemberInscriptionData();
   }
 
   @override
@@ -40,7 +46,7 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
   }
 
   void _goToStep(int step) {
-    if (step < 0 || step > 5) return;
+    if (step < 0 || step >= _totalSteps) return;
     setState(() => _step = step);
     _pages.animateToPage(
       step,
@@ -57,7 +63,7 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
     }
   }
 
-  void _updatePersonalData(UserInscription_PersonalData data) => setState(() {
+  void _updatePersonalData(MemberInscription_PersonalData data) => setState(() {
     final previousPersonalData = _formData.personalData;
     final legalAgeStatusChanged =
         previousPersonalData != null &&
@@ -69,34 +75,35 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
     );
   });
 
-  void _updateIdData(UserInscription_IdData data) =>
-      setState(() => _formData = _formData.copyWith(idData: data));
-
-  void _updateWaiverData(UserInscription_WaiverAgreementData? data) => setState(
-    () => _formData = (data == null
-        ? _formData.copyWith(clearWaiverAgreementData: true)
-        : _formData.copyWith(waiverAgreementData: data)),
+  void _updatePreviousInscriptionData(
+    MemberInscription_PreviousInscriptionData data,
+  ) => setState(
+    () => _formData = _formData.copyWith(previousInscriptionData: data),
   );
 
-  void _updatePlanData(UserInscription_PlanSelectionData data) => setState(
+  void _updateIdData(MemberInscription_IdData data) =>
+      setState(() => _formData = _formData.copyWith(idData: data));
+
+  void _updatePlanData(MemberInscription_PlanSelectionData data) => setState(
     () => _formData = _formData.copyWith(
       planSelectionData: data,
       clearPaymentSelectionData: true,
     ),
   );
 
-  void _updatePaymentData(UserInscription_PaymentSelectionData data) =>
+  void _updatePaymentData(MemberInscription_PaymentSelectionData data) =>
       setState(
         () => _formData = _formData.copyWith(paymentSelectionData: data),
       );
 
   Future<void> _complete() async {
+    final previousInscription = _formData.previousInscriptionData;
     final personal = _formData.personalData;
     final id = _formData.idData;
-    final waiver = _formData.waiverAgreementData;
     final plan = _formData.planSelectionData;
     final payment = _formData.paymentSelectionData;
-    if (personal == null ||
+    if (previousInscription == null ||
+        personal == null ||
         id == null ||
         id.ineFrontBytes == null ||
         id.ineFrontFormat == null ||
@@ -104,9 +111,8 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
         id.ineBackFormat == null ||
         (!personal.isOfLegalAge &&
             (id.curpBytes == null || id.curpFormat == null)) ||
-        waiver == null ||
         plan == null ||
-        payment == null) {
+        (!_isReturningMember && payment == null)) {
       _showError('Completa todos los pasos del registro.');
       return;
     }
@@ -114,12 +120,9 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
       _showError('La foto de perfil no debe superar 5 MB.');
       return;
     }
-    final documentSizes = [
-      if (!personal.isOfLegalAge) id.curpBytes!.length,
-      waiver.signatureBytes.length,
-    ];
+    final documentSizes = [if (!personal.isOfLegalAge) id.curpBytes!.length];
     if (documentSizes.any((size) => size > _maxDocumentBytes)) {
-      _showError('El CURP y la firma deben pesar como máximo 20 MB cada uno.');
+      _showError('El CURP no debe pesar más de 20 MB.');
       return;
     }
     if (id.ineFrontBytes!.length > 5 * 1024 * 1024 ||
@@ -139,21 +142,41 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
 
     setState(() => _loading = true);
     try {
-      final result = await InscriptionService.instance.signUp(_formData);
+      final result = await InscriptionService.instance.signIn(_formData);
 
       if (!mounted) return;
       switch (result) {
-        case Success<UserInscriptionError, String>():
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Registro completado. Tu sesión está iniciada.'),
-            ),
-          );
+        case Success<MemberInscriptionError, String>():
+          if (_isReturningMember) {
+            await showDialog<void>(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Cuenta creada'),
+                content: const Text(
+                  'Acude al gimnasio dentro de los próximos 4 días para que '
+                  'recepción valide tu cuenta. De lo contrario, será bloqueada.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('ENTENDIDO'),
+                  ),
+                ],
+              ),
+            );
+            if (!mounted) return;
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Registro completado. Tu sesión está iniciada.'),
+              ),
+            );
+          }
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (_) => const HomeScreen()),
             (_) => false,
           );
-        case Error<UserInscriptionError, String>(:final errorType):
+        case Error<MemberInscriptionError, String>(:final errorType):
           _showError(errorType.message);
       }
     } catch (e) {
@@ -172,29 +195,46 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const names = [
-      'Datos personales',
-      'Documentos',
-      'Responsiva',
-      'Plan de entrenamiento',
-      'Resumen de compra',
-      'Método de pago',
-    ];
+    final names = _isReturningMember
+        ? const [
+            'Inscripción previa',
+            'Validación de cuenta',
+            'Datos personales',
+            'Documentos',
+            'Plan de entrenamiento',
+          ]
+        : const [
+            'Inscripción previa',
+            'Datos personales',
+            'Documentos',
+            'Plan de entrenamiento',
+            'Resumen de compra',
+            'Método de pago',
+          ];
+    final subtitles = _isReturningMember
+        ? const [
+            'Selecciona la opción que mejor responda la siguiente pregunta: ¿ya estás inscrito al gimnasio?',
+            'Antes de continuar, toma en cuenta el plazo para validar tu cuenta.',
+            'Como ya te habías inscrito anteriormente, el sistema lo tiene presente. Confirma tus datos para crear tu cuenta.',
+            'Sube imágenes claras de los documentos requeridos. Menores de edad: incluye tu CURP.',
+            'Como ya te habías inscrito anteriormente, el sistema lo tiene presente. Selecciona tu plan de entrenamiento.',
+          ]
+        : const [
+            'Selecciona la opción que mejor responda la siguiente pregunta: ¿ya estás inscrito al gimnasio?',
+            'Introduce tu información para comenzar con tu inscripción al gimnasio.',
+            'Sube imágenes claras de los documentos requeridos. Menores de edad: incluye tu CURP.',
+            'Selecciona la opción de entrenamiento que mejor se adapte a ti.',
+            'Revisa los beneficios y el total.',
+            'Elige cómo realizarás tu pago.',
+          ];
     final personal = _formData.personalData;
     return RegistrationScaffold(
       stepIndex: _step + 1,
-      totalSteps: names.length,
+      totalSteps: _totalSteps,
       stepName: names[_step],
       nextStepName: _step < names.length - 1 ? names[_step + 1] : null,
       title: names[_step],
-      subtitle: const [
-        'Introduce tu información para comenzar con tu inscripción al gimnasio.',
-        'Sube imágenes claras de los documentos requeridos. Menores de edad: incluye tu CURP.',
-        'Revisa y firma la carta responsiva. Menores de edad: solicitar firma de su tutor legal.',
-        'Selecciona la opción de entrenamiento que mejor se adapte a ti.',
-        'Revisa los beneficios y el total.',
-        'Elige cómo realizarás tu pago.',
-      ][_step],
+      subtitle: subtitles[_step],
       isLoading: _loading,
       onBack: _back,
       child: SizedBox(
@@ -202,43 +242,75 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
         child: PageView(
           controller: _pages,
           physics: const NeverScrollableScrollPhysics(),
-          children: [
-            RegisterPersonalDataScreen(
-              initialData: personal,
-              onContinue: (data) {
-                _updatePersonalData(data);
-                _goToStep(1);
-              },
-            ),
-            if (personal == null)
-              const SizedBox.shrink()
-            else
-              RegisterIdScreen(
-                personalData: personal,
-                data: _formData.idData,
-                onDataChanged: _updateIdData,
-                onContinue: () => _goToStep(2),
-              ),
-            RegisterWaiverAgreementScreen(
-              data: _formData.waiverAgreementData,
-              onDataChanged: _updateWaiverData,
-              onContinue: () => _goToStep(3),
-            ),
-            RegisterPlanSelectionScreen(
-              data: _formData.planSelectionData,
-              onDataChanged: _updatePlanData,
-              onContinue: () => _goToStep(4),
-            ),
-            RegisterPaymentSummaryScreen(
-              data: _formData.planSelectionData,
-              onContinue: () => _goToStep(5),
-            ),
-            RegisterPaymentSelectionScreen(
-              data: _formData.paymentSelectionData,
-              onDataChanged: _updatePaymentData,
-              onContinue: _complete,
-            ),
-          ],
+          children: _isReturningMember
+              ? [
+                  RegisterPreviousInscriptionScreen(
+                    data: _formData.previousInscriptionData,
+                    onDataChanged: _updatePreviousInscriptionData,
+                    onContinue: () => _goToStep(1),
+                  ),
+                  RegisterAccountValidationNoticeScreen(
+                    onContinue: () => _goToStep(2),
+                  ),
+                  RegisterPersonalDataScreen(
+                    initialData: personal,
+                    onContinue: (data) {
+                      _updatePersonalData(data);
+                      _goToStep(3);
+                    },
+                  ),
+                  if (personal == null)
+                    const SizedBox.shrink()
+                  else
+                    RegisterIdScreen(
+                      personalData: personal,
+                      data: _formData.idData,
+                      onDataChanged: _updateIdData,
+                      onContinue: () => _goToStep(4),
+                    ),
+                  RegisterPlanSelectionScreen(
+                    data: _formData.planSelectionData,
+                    onDataChanged: _updatePlanData,
+                    onContinue: _complete,
+                  ),
+                ]
+              : [
+                  RegisterPreviousInscriptionScreen(
+                    data: _formData.previousInscriptionData,
+                    onDataChanged: _updatePreviousInscriptionData,
+                    onContinue: () => _goToStep(1),
+                  ),
+                  RegisterPersonalDataScreen(
+                    initialData: personal,
+                    onContinue: (data) {
+                      _updatePersonalData(data);
+                      _goToStep(2);
+                    },
+                  ),
+                  if (personal == null)
+                    const SizedBox.shrink()
+                  else
+                    RegisterIdScreen(
+                      personalData: personal,
+                      data: _formData.idData,
+                      onDataChanged: _updateIdData,
+                      onContinue: () => _goToStep(3),
+                    ),
+                  RegisterPlanSelectionScreen(
+                    data: _formData.planSelectionData,
+                    onDataChanged: _updatePlanData,
+                    onContinue: () => _goToStep(4),
+                  ),
+                  RegisterPaymentSummaryScreen(
+                    data: _formData.planSelectionData,
+                    onContinue: () => _goToStep(5),
+                  ),
+                  RegisterPaymentSelectionScreen(
+                    data: _formData.paymentSelectionData,
+                    onDataChanged: _updatePaymentData,
+                    onContinue: _complete,
+                  ),
+                ],
         ),
       ),
     );

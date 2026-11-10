@@ -1,28 +1,30 @@
 import 'dart:typed_data';
 
-import 'package:champions_ring_app/core/models/core_user.dart';
+import 'package:champions_ring_app/core/models/core_payment.dart'
+    show CorePaymentType;
 import 'package:champions_ring_app/core/utils/result.dart';
-import 'package:champions_ring_app/features/inscription/models/user_inscription_data.dart';
+import 'package:champions_ring_app/features/inscription/models/member_inscription_data.dart';
 import 'package:champions_ring_app/features/inscription/services/inscription_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('SignupService.signUp', () {
-    final service = SignupService();
+  group('InscriptionService.signUp', () {
+    final service = InscriptionService();
 
-    UserInscription_PersonalData personalData({required DateTime birthDate}) =>
-        UserInscription_PersonalData(
-          photoBytes: Uint8List.fromList([1]),
-          photoFormat: 'png',
-          name: 'Ana',
-          lastName: 'López',
-          birthDate: birthDate,
-          email: 'ana@example.com',
-          phone: '5551234567',
-          password: 'Secure123!',
-        );
+    MemberInscription_PersonalData personalData({
+      required DateTime birthDate,
+    }) => MemberInscription_PersonalData(
+      photoBytes: Uint8List.fromList([1]),
+      photoFormat: 'png',
+      name: 'Ana',
+      lastName: 'López',
+      birthDate: birthDate,
+      email: 'ana@example.com',
+      phone: '5551234567',
+      password: 'Secure123!',
+    );
 
-    UserInscription_IdData completeIdData() => UserInscription_IdData(
+    MemberInscription_IdData completeIdData() => MemberInscription_IdData(
       ineFrontBytes: Uint8List.fromList([1]),
       ineFrontFormat: 'png',
       ineBackBytes: Uint8List.fromList([1]),
@@ -31,94 +33,95 @@ void main() {
       curpFormat: 'png',
     );
 
-    UserInscriptionData completeData({
-      required UserInscription_PersonalData personal,
-      UserInscription_IdData? id,
-      UserInscription_PaymentSelectionData? payment,
-    }) => UserInscriptionData(
+    MemberInscriptionData completeData({
+      required MemberInscription_PersonalData personal,
+      MemberInscription_IdData? id,
+      MemberInscription_PaymentSelectionData? payment,
+    }) => MemberInscriptionData(
+      previousInscriptionData: MemberInscription_PreviousInscriptionData(
+        previouslySignedIn: true,
+      ),
       personalData: personal,
       idData: id ?? completeIdData(),
-      waiverAgreementData: UserInscription_WaiverAgreementData(
-        signatureBytes: Uint8List.fromList([1]),
-      ),
-      planSelectionData: UserInscription_PlanSelectionData(
+      planSelectionData: MemberInscription_PlanSelectionData(
         membershipPlanId: 1,
       ),
       paymentSelectionData:
           payment ??
-          UserInscription_PaymentSelectionData(
-            paymentMethod: CorePaymentMethod.cash,
+          MemberInscription_PaymentSelectionData(
+            paymentMethod: CorePaymentType.cash,
           ),
     );
 
     test('rechaza el estado inicial sin datos', () async {
       // ARRANGE
-      const data = UserInscriptionData();
+      const data = MemberInscriptionData();
 
       // ACT
-      final result = await service.signUp(data);
+      final result = await service.signIn(data);
 
       // ASSERT
-      expect(result, isA<Error<UserInscriptionError, String>>());
+      expect(result, isA<Error<MemberInscriptionError, String>>());
       expect(
-        (result as Error<UserInscriptionError, String>).errorType,
-        UserInscriptionError.missingInscriptionData,
+        (result as Error<MemberInscriptionError, String>).errorType,
+        MemberInscriptionError.missingInscriptionData,
       );
     });
 
-    test('rechaza si falta la responsiva', () async {
+    test('rechaza si falta la respuesta de inscripción previa', () async {
       // ARRANGE
-      final incompleteData = UserInscriptionData(
+      final incompleteData = MemberInscriptionData(
+        previousInscriptionData: null,
         personalData: personalData(birthDate: DateTime(1990, 1, 1)),
         idData: completeIdData(),
-        planSelectionData: UserInscription_PlanSelectionData(
+        planSelectionData: MemberInscription_PlanSelectionData(
           membershipPlanId: 1,
         ),
-        paymentSelectionData: UserInscription_PaymentSelectionData(
-          paymentMethod: CorePaymentMethod.cash,
+        paymentSelectionData: MemberInscription_PaymentSelectionData(
+          paymentMethod: CorePaymentType.cash,
         ),
       );
 
       // ACT
-      final result = await service.signUp(incompleteData);
+      final result = await service.signIn(incompleteData);
 
       // ASSERT
-      expect(result, isA<Error<UserInscriptionError, String>>());
+      expect(result, isA<Error<MemberInscriptionError, String>>());
       expect(
-        (result as Error<UserInscriptionError, String>).errorType,
-        UserInscriptionError.missingInscriptionData,
+        (result as Error<MemberInscriptionError, String>).errorType,
+        MemberInscriptionError.missingInscriptionData,
       );
     });
 
     test('rechaza documentos de identidad incompletos', () async {
       // ARRANGE
-      final data = UserInscriptionData(
+      final data = MemberInscriptionData(
+        previousInscriptionData: MemberInscription_PreviousInscriptionData(
+          previouslySignedIn: true,
+        ),
         personalData: personalData(birthDate: DateTime(1990, 1, 1)),
-        idData: UserInscription_IdData(
+        idData: MemberInscription_IdData(
           ineFrontBytes: Uint8List.fromList([1]),
           ineFrontFormat: 'png',
           ineBackBytes: null,
           ineBackFormat: null,
         ),
-        waiverAgreementData: UserInscription_WaiverAgreementData(
-          signatureBytes: Uint8List.fromList([1]),
-        ),
-        planSelectionData: UserInscription_PlanSelectionData(
+        planSelectionData: MemberInscription_PlanSelectionData(
           membershipPlanId: 1,
         ),
-        paymentSelectionData: UserInscription_PaymentSelectionData(
-          paymentMethod: CorePaymentMethod.cash,
+        paymentSelectionData: MemberInscription_PaymentSelectionData(
+          paymentMethod: CorePaymentType.cash,
         ),
       );
 
       // ACT
-      final result = await service.signUp(data);
+      final result = await service.signIn(data);
 
       // ASSERT
-      expect(result, isA<Error<UserInscriptionError, String>>());
+      expect(result, isA<Error<MemberInscriptionError, String>>());
       expect(
-        (result as Error<UserInscriptionError, String>).errorType,
-        UserInscriptionError.missingInscriptionData,
+        (result as Error<MemberInscriptionError, String>).errorType,
+        MemberInscriptionError.missingInscriptionData,
       );
     });
 
@@ -126,7 +129,7 @@ void main() {
       // ARRANGE
       final data = completeData(
         personal: personalData(birthDate: DateTime.now()),
-        id: UserInscription_IdData(
+        id: MemberInscription_IdData(
           ineFrontBytes: Uint8List.fromList([1]),
           ineFrontFormat: 'png',
           ineBackBytes: Uint8List.fromList([1]),
@@ -135,39 +138,39 @@ void main() {
       );
 
       // ACT
-      final result = await service.signUp(data);
+      final result = await service.signIn(data);
 
       // ASSERT
-      expect(result, isA<Error<UserInscriptionError, String>>());
+      expect(result, isA<Error<MemberInscriptionError, String>>());
       expect(
-        (result as Error<UserInscriptionError, String>).errorType,
-        UserInscriptionError.missingInscriptionData,
+        (result as Error<MemberInscriptionError, String>).errorType,
+        MemberInscriptionError.missingInscriptionData,
       );
     });
 
     test('rechaza datos cuando falta la selección de pago', () async {
       // ARRANGE
       final personal = personalData(birthDate: DateTime(1990, 1, 1));
-      final data = UserInscriptionData(
+      final data = MemberInscriptionData(
+        previousInscriptionData: MemberInscription_PreviousInscriptionData(
+          previouslySignedIn: false,
+        ),
         personalData: personal,
         idData: completeIdData(),
-        waiverAgreementData: UserInscription_WaiverAgreementData(
-          signatureBytes: Uint8List.fromList([1]),
-        ),
-        planSelectionData: UserInscription_PlanSelectionData(
+        planSelectionData: MemberInscription_PlanSelectionData(
           membershipPlanId: 1,
         ),
         paymentSelectionData: null,
       );
 
       // ACT
-      final result = await service.signUp(data);
+      final result = await service.signIn(data);
 
       // ASSERT
-      expect(result, isA<Error<UserInscriptionError, String>>());
+      expect(result, isA<Error<MemberInscriptionError, String>>());
       expect(
-        (result as Error<UserInscriptionError, String>).errorType,
-        UserInscriptionError.missingInscriptionData,
+        (result as Error<MemberInscriptionError, String>).errorType,
+        MemberInscriptionError.missingInscriptionData,
       );
     });
   });

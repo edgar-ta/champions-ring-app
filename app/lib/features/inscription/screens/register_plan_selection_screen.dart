@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../models/membership_plan.dart';
-import '../models/user_inscription_data.dart';
+import '../models/member_inscription_data.dart';
 import '../widgets/membership_card_plan.dart';
 import '../widgets/registration_scaffold.dart';
 
 /// Paso 4: selección del plan de membresía.
 class RegisterPlanSelectionScreen extends StatelessWidget {
-  final UserInscription_PlanSelectionData? data;
-  final ValueChanged<UserInscription_PlanSelectionData> onDataChanged;
+  final MemberInscription_PlanSelectionData? data;
+  final ValueChanged<MemberInscription_PlanSelectionData> onDataChanged;
   final VoidCallback onContinue;
 
   const RegisterPlanSelectionScreen({
@@ -29,7 +29,9 @@ class RegisterPlanSelectionScreen extends StatelessWidget {
                 membershipPlan: plan,
                 isSelected: data?.membershipPlanId == plan.id,
                 onTap: () => onDataChanged(
-                  UserInscription_PlanSelectionData(membershipPlanId: plan.id),
+                  MemberInscription_PlanSelectionData(
+                    membershipPlanId: plan.id,
+                  ),
                 ),
               ),
               const SizedBox(height: 12),

@@ -7,7 +7,7 @@ const Color _gris = Color(0xFF6B6B6B);
 /// Estructura común de todos los pasos: cabecera con progreso, título,
 /// contenido y pie.
 class RegistrationScaffold extends StatelessWidget {
-  final int stepIndex; // 1..4
+  final int stepIndex; // 1..totalSteps
   final int totalSteps;
   final String stepName;
   final String? nextStepName;
@@ -16,7 +16,7 @@ class RegistrationScaffold extends StatelessWidget {
   final String headerTitle; // texto junto al logo
   final bool isLoading;
   final bool showFooter; // oculta el pie
-  final bool blockScrolling; // útil mientras se dibuja la firma
+  final bool blockScrolling;
   final Widget? footer; // si es null se usa "¿Ya tienes una cuenta?"
   final Widget child;
   final VoidCallback? onBack;
@@ -315,31 +315,41 @@ class _Header extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text.rich(
-              TextSpan(
-                children: [
-                  TextSpan(
-                    text: 'Paso $stepIndex de $totalSteps: ',
-                    style: const TextStyle(
-                      color: kRojo,
-                      fontWeight: FontWeight.w700,
+            Expanded(
+              child: Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: 'Paso $stepIndex de $totalSteps: ',
+                      style: const TextStyle(
+                        color: kRojo,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
-                  TextSpan(
-                    text: stepName,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                ],
+                    TextSpan(
+                      text: stepName,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 11),
               ),
-              style: const TextStyle(fontSize: 11),
             ),
-            if (nextStepName != null)
-              Text(
-                'Siguiente: $nextStepName',
-                style: const TextStyle(fontSize: 11, color: _gris),
+            if (nextStepName != null) ...[
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  'Siguiente: $nextStepName',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.right,
+                  style: const TextStyle(fontSize: 11, color: _gris),
+                ),
               ),
+            ],
           ],
         ),
       ],

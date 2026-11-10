@@ -1,14 +1,14 @@
-import 'package:champions_ring_app/core/models/core_user.dart'
-    show CorePaymentMethod;
+import 'package:champions_ring_app/core/models/core_payment.dart'
+    show CorePaymentType;
 import 'package:flutter/material.dart';
 
-import '../models/user_inscription_data.dart';
+import '../models/member_inscription_data.dart';
 import '../widgets/registration_scaffold.dart';
 
 /// Paso 6: selección del método de pago.
 class RegisterPaymentSelectionScreen extends StatelessWidget {
-  final UserInscription_PaymentSelectionData? data;
-  final ValueChanged<UserInscription_PaymentSelectionData> onDataChanged;
+  final MemberInscription_PaymentSelectionData? data;
+  final ValueChanged<MemberInscription_PaymentSelectionData> onDataChanged;
   final VoidCallback onContinue;
 
   const RegisterPaymentSelectionScreen({
@@ -24,8 +24,8 @@ class RegisterPaymentSelectionScreen extends StatelessWidget {
       Expanded(
         child: Column(
           children: [
-            RadioListTile<CorePaymentMethod>(
-              value: CorePaymentMethod.cash,
+            RadioListTile<CorePaymentType>(
+              value: CorePaymentType.cash,
               groupValue: data?.paymentMethod,
               activeColor: const Color(0xFFEA3A3F),
               title: const Text('Pagar en efectivo'),
@@ -33,16 +33,18 @@ class RegisterPaymentSelectionScreen extends StatelessWidget {
               onChanged: (method) {
                 if (method != null) {
                   onDataChanged(
-                    UserInscription_PaymentSelectionData(paymentMethod: method),
+                    MemberInscription_PaymentSelectionData(
+                      paymentMethod: method,
+                    ),
                   );
                 }
               },
             ),
-            RadioListTile<CorePaymentMethod>(
-              value: CorePaymentMethod.card,
+            RadioListTile<CorePaymentType>(
+              value: CorePaymentType.mercadoPago,
               groupValue: data?.paymentMethod,
               title: const Text('Pagar con tarjeta'),
-              subtitle: const Text('Próximamente'),
+              subtitle: const Text('Próximamente con Mercado Pago'),
               onChanged: null,
             ),
           ],

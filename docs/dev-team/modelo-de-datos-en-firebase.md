@@ -38,28 +38,30 @@ members
 	phone: string
 	photo_url: string?
 	legal_data_are_theirs: boolean
-	registration_payed: boolean
+	inscription_paid: boolean
 
 	membership_plan_ref: reference?
+	latest_renewal_ref: reference?
 
 	guardian_name: string?
 	guardian_phone: string?
 	guardian_relationship: string?
 	curp_url: string?
-	curp_validated: boolean
+	curp_validated: boolean?
 
-	waiver_agreement_url: string
 	ine_back_url: string
-	ine_front_url: string
-
 	ine_back_validated: boolean
+	ine_front_url: string
 	ine_front_validated: boolean
-	waiver_agreement_validated: boolean
+
+	waiver_agreement_url: string?
+	waiver_agreement_validated: boolean?
 
 	creation_date: timestamp
 	deletion_date: timestamp?
 
 	renewals/
+		uid: string
 		start_date: timestamp
 		end_date: timestamp
 		membership_plan_ref: reference?

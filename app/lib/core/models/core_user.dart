@@ -21,11 +21,11 @@ class CoreUser {
   final bool legalDataAreTheirs;
   final int membershipPlanId;
   final String name;
-  final CorePaymentMethod paymentMethod;
+  final CorePaymentMethod? paymentMethod;
   final String phone;
   final String photoUrl;
   final bool registrationPayed;
-  final String signatureUrl;
+  final String? signatureUrl;
   final CoreUserType type;
   final String uid;
 
@@ -44,11 +44,11 @@ class CoreUser {
     required this.legalDataAreTheirs,
     required this.membershipPlanId,
     required this.name,
-    required this.paymentMethod,
+    this.paymentMethod,
     required this.phone,
     required this.photoUrl,
     required this.registrationPayed,
-    required this.signatureUrl,
+    this.signatureUrl,
     required this.type,
     required this.uid,
   });
@@ -68,7 +68,7 @@ class CoreUser {
     'legal_data_are_theirs': legalDataAreTheirs,
     'membership_plan_id': membershipPlanId,
     'name': name,
-    'payment_method': paymentMethod.name,
+    if (paymentMethod != null) 'payment_method': paymentMethod!.name,
     'phone': phone,
     'photo_url': photoUrl,
     'registration_payed': registrationPayed,

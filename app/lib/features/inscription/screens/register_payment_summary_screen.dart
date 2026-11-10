@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../models/membership_plan.dart';
-import '../models/user_inscription_data.dart';
+import '../models/member_inscription_data.dart';
 import '../widgets/registration_scaffold.dart';
 
 /// Paso 5: revisa el plan y el importe antes de elegir cómo pagar.
 class RegisterPaymentSummaryScreen extends StatelessWidget {
   static const _enrollmentCost = 120;
 
-  final UserInscription_PlanSelectionData? data;
+  final MemberInscription_PlanSelectionData? data;
   final VoidCallback onContinue;
 
   const RegisterPaymentSummaryScreen({
