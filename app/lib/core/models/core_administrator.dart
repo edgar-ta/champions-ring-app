@@ -1,6 +1,8 @@
 import 'package:champions_ring_app/core/models/core_date.dart';
+import 'package:champions_ring_app/core/utils/firestore_entity.dart';
 
-class CoreAdministrator {
+class CoreAdministrator extends FirestoreEntity {
+  @override
   final String uid;
   final String name;
   final String lastName;
@@ -18,6 +20,7 @@ class CoreAdministrator {
     this.deletionDate,
   });
 
+  @override
   Map<String, dynamic> toFirebaseMap() {
     return {
       'uid': uid,

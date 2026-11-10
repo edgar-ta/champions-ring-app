@@ -155,12 +155,12 @@ class InscriptionService {
         creationDate: CoreDate.fromFieldValue(FieldValue.serverTimestamp()),
       );
       await CoreMemberRepository()
-          .upsertCoreMember(coreMember)
+          .upsert(coreMember)
           .timeout(const Duration(seconds: 15));
 
       if (!previousInscription.previouslySignedIn) {
         CorePaymentRepository paymentRepository = CorePaymentRepository();
-        String paymentUid = paymentRepository.nextId;
+        String paymentUid = paymentRepository.nextUid;
 
         switch (data.paymentSelectionData!.paymentMethod) {
           case CorePaymentType.cash:
@@ -183,7 +183,7 @@ class InscriptionService {
               ),
             );
             await CorePaymentRepository()
-                .upsertCorePayment(cashPayment.toCorePayment())
+                .upsert(cashPayment.toCorePayment())
                 .timeout(const Duration(seconds: 15));
             break;
           case CorePaymentType.directTransfer:

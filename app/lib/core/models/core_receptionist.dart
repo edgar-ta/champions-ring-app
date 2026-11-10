@@ -1,6 +1,8 @@
 import 'package:champions_ring_app/core/models/core_date.dart';
+import 'package:champions_ring_app/core/utils/firestore_entity.dart';
 
-class CoreReceptionist {
+class CoreReceptionist extends FirestoreEntity {
+  @override
   final String uid;
   final String name;
   final String lastName;
@@ -18,6 +20,7 @@ class CoreReceptionist {
     this.deletionDate,
   });
 
+  @override
   Map<String, dynamic> toFirebaseMap() {
     return {
       'uid': uid,

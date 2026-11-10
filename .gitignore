@@ -56,4 +56,6 @@
 /docs/**/*.m4a
 /docs/**/*.mp4
 /docs/**/*.svg
+/docs/**/*.lnk
+/docs/**/*.tmp
 .env

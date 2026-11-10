@@ -1,10 +1,13 @@
-import 'package:champions_ring_app/core/firebase/firestore_instance.dart';
 import 'package:champions_ring_app/core/models/core_date.dart';
 import 'package:champions_ring_app/core/models/core_member.dart';
 import 'package:champions_ring_app/core/repositories/core_client_repository.dart';
+import 'package:champions_ring_app/core/utils/base_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class CoreMemberRepository {
+class CoreMemberRepository extends BaseRepository<CoreMember> {
+  @override
+  String get collectionName => 'members';
+
   /// Inserts a new `member` document in Firestore or updates an already existing
   /// one with the same uid as the object given.
   ///
@@ -13,8 +16,9 @@ class CoreMemberRepository {
   /// throws an error.
   ///
   /// Returns `true` only if the document was just created.
-  Future<bool> upsertCoreMember(CoreMember member) async {
-    final clientExists = await CoreClientRepository().isCoreClientPresent(
+  @override
+  Future<bool> upsert(CoreMember member) async {
+    final clientExists = await CoreClientRepository().isDocumentPresent(
       member.uid,
     );
     if (!clientExists) {
@@ -23,21 +27,12 @@ class CoreMemberRepository {
       );
     }
 
-    final firestore = FirestoreInstance.instance;
-    final memberDocument = firestore.collection('members').doc(member.uid);
-
-    return firestore.runTransaction((transaction) async {
-      final memberSnapshot = await transaction.get(memberDocument);
-      transaction.set(memberDocument, member.toFirebaseMap());
-      return !memberSnapshot.exists;
-    });
+    return super.upsert(member);
   }
 
-  Future<CoreMember> getCoreMemberById(String uid) async {
-    final snapshot = await FirestoreInstance.instance
-        .collection('members')
-        .doc(uid)
-        .get();
+  @override
+  Future<CoreMember> getById(String uid) async {
+    final snapshot = await myCollection.doc(uid).get();
     final data = snapshot.data();
     if (data == null) {
       throw StateError('Core member with id "$uid" was not found.');

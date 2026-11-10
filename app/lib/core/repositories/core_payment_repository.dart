@@ -1,9 +1,12 @@
-import 'package:champions_ring_app/core/firebase/firestore_instance.dart';
 import 'package:champions_ring_app/core/models/core_date.dart';
 import 'package:champions_ring_app/core/models/core_payment.dart';
+import 'package:champions_ring_app/core/utils/base_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class CorePaymentRepository {
+class CorePaymentRepository extends BaseRepository<CorePayment> {
+  @override
+  String get collectionName => 'payments';
+
   /// Inserts a new `payment` document in Firestore or updates an already existing
   /// one with the same uid as the object given.
   ///
@@ -13,7 +16,8 @@ class CorePaymentRepository {
   ///   reference to a `receptionist` document.
   ///
   /// Returns `true` only if the document was just created.
-  Future<bool> upsertCorePayment(CorePayment payment) async {
+  @override
+  Future<bool> upsert(CorePayment payment) async {
     if (!(payment.amount > 0)) {
       throw ArgumentError.value(
         payment.amount,
@@ -31,10 +35,9 @@ class CorePaymentRepository {
       );
     }
 
-    final firestore = FirestoreInstance.instance;
-    final paymentDocument = firestore.collection('payments').doc(payment.uid);
+    final paymentDocument = myCollection.doc(payment.uid);
 
-    return firestore.runTransaction((transaction) async {
+    return myCollection.firestore.runTransaction((transaction) async {
       if (approverRef != null) {
         final approverSnapshot = await transaction.get(approverRef);
         if (!approverSnapshot.exists) {
@@ -51,11 +54,9 @@ class CorePaymentRepository {
     });
   }
 
-  Future<CorePayment> getCorePaymentById(String uid) async {
-    final snapshot = await FirestoreInstance.instance
-        .collection('payments')
-        .doc(uid)
-        .get();
+  @override
+  Future<CorePayment> getById(String uid) async {
+    final snapshot = await myCollection.doc(uid).get();
     final data = snapshot.data();
     if (data == null) {
       throw StateError('Core payment with id "$uid" was not found.');
@@ -114,7 +115,4 @@ class CorePaymentRepository {
         'rejected' => CoreMercadoPagoStatus.rejected,
         _ => throw FormatException('Unknown Mercado Pago status "$value".'),
       };
-
-  String get nextId =>
-      FirestoreInstance.instance.collection('payments').doc().id;
 }

@@ -1,4 +1,5 @@
 import 'package:champions_ring_app/core/models/core_date.dart';
+import 'package:champions_ring_app/core/utils/firestore_entity.dart';
 
 enum CoreMembershipPlanDuration {
   oneDay('1d'),
@@ -10,7 +11,8 @@ enum CoreMembershipPlanDuration {
   const CoreMembershipPlanDuration(this.serialization);
 }
 
-class CoreMembershipPlan {
+class CoreMembershipPlan extends FirestoreEntity {
+  @override
   final String uid;
   final String name;
   final double cost;
@@ -30,6 +32,7 @@ class CoreMembershipPlan {
     this.deletionDate,
   });
 
+  @override
   Map<String, dynamic> toFirebaseMap() {
     return {
       'uid': uid,

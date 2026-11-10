@@ -1,4 +1,5 @@
 import 'package:champions_ring_app/core/models/core_date.dart';
+import 'package:champions_ring_app/core/utils/firestore_entity.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 enum CorePaymentType {
@@ -29,7 +30,8 @@ enum CoreMercadoPagoStatus {
   const CoreMercadoPagoStatus(this.serialization);
 }
 
-class CorePayment {
+class CorePayment extends FirestoreEntity {
+  @override
   final String uid;
   final CorePaymentType type;
 
@@ -68,6 +70,7 @@ class CorePayment {
     this.deletionDate,
   });
 
+  @override
   Map<String, dynamic> toFirebaseMap() {
     return {
       'uid': uid,

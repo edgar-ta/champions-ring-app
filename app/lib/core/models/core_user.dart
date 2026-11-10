@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:champions_ring_app/core/utils/firestore_entity.dart';
 
 import 'core_date.dart';
 
@@ -6,7 +7,7 @@ enum CoreUserType { administrator, member, receptionist }
 
 enum CorePaymentMethod { cash, card }
 
-class CoreUser {
+class CoreUser extends FirestoreEntity {
   final DateTime birthDate;
   final CoreDate creationDate;
   final CoreDate? deletionDate;
@@ -27,6 +28,7 @@ class CoreUser {
   final bool registrationPayed;
   final String? signatureUrl;
   final CoreUserType type;
+  @override
   final String uid;
 
   CoreUser({
@@ -53,6 +55,7 @@ class CoreUser {
     required this.uid,
   });
 
+  @override
   Map<String, dynamic> toFirebaseMap() => {
     'birth_date': Timestamp.fromDate(birthDate),
     'creation_date': _firebaseDate(creationDate),
