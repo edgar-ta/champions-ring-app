@@ -115,7 +115,7 @@ class InscriptionService {
       }
       user = authenticatedUser;
 
-      final storage = MemberStorageService(userId: authenticatedUser.uid);
+      final storage = MemberStorageService(memberId: authenticatedUser.uid);
       final photoUrl = await _uploadUrl(
         storage.uploadProfilePicture(personal.photoBytes, personal.photoFormat),
         MemberInscriptionError.profilePictureUploadFailed,

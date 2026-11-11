@@ -19,9 +19,9 @@ enum ImageUploadError {
 }
 
 class MemberStorageService {
-  final String userId;
+  final String memberId;
 
-  MemberStorageService({required this.userId});
+  MemberStorageService({required this.memberId});
 
   Reference get storage => FirebaseStorage.instance.ref();
 
@@ -38,7 +38,7 @@ class MemberStorageService {
   ) => _upload(
     bytes,
     format,
-    path: 'users/$userId/ine_back',
+    path: 'members/$memberId/ine_back',
     maxBytes: 5 * 1024 * 1024,
   );
 
@@ -48,7 +48,7 @@ class MemberStorageService {
   ) => _upload(
     bytes,
     format,
-    path: 'users/$userId/ine_front',
+    path: 'members/$memberId/ine_front',
     maxBytes: 5 * 1024 * 1024,
   );
 
@@ -58,7 +58,7 @@ class MemberStorageService {
   ) => _upload(
     bytes,
     format,
-    path: 'users/$userId/curp',
+    path: 'members/$memberId/curp',
     maxBytes: 20 * 1024 * 1024,
   );
 
@@ -68,7 +68,7 @@ class MemberStorageService {
   ) => _upload(
     bytes,
     format,
-    path: 'users/$userId/profile_picture',
+    path: 'members/$memberId/profile_picture',
     maxBytes: 5 * 1024 * 1024,
   );
 
@@ -78,7 +78,7 @@ class MemberStorageService {
   ) => _upload(
     bytes,
     format,
-    path: 'users/$userId/signature',
+    path: 'members/$memberId/signature',
     maxBytes: 20 * 1024 * 1024,
   );
 
