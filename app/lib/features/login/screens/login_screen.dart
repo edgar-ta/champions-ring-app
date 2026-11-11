@@ -54,6 +54,11 @@ class LoginScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 28),
                   LoginForm(onSuccess: () => _goToHomeScreen(context)),
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: () => throw Exception(),
+                    child: const Text('Throw Test Exception'),
+                  ),
                   const SizedBox(height: 28),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,

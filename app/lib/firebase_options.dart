@@ -63,13 +63,13 @@ class DefaultFirebaseOptions {
     projectId: 'champions-ring-app',
     storageBucket: 'champions-ring-app.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyC-kwenMdB9g4lrDGH-4JdUDP610Ub0ds4',
     appId: '1:1084769880827:ios:21298b36b16074f9fc7e5e',
     messagingSenderId: '1084769880827',
     projectId: 'champions-ring-app',
     storageBucket: 'champions-ring-app.firebasestorage.app',
+    iosClientId: '1084769880827-qkakdsdme259gu5h0gpdnme2ev60vjtl.apps.googleusercontent.com',
     iosBundleId: 'com.example.championsRingApp',
   );
 }

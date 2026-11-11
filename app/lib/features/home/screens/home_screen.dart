@@ -530,6 +530,11 @@ class _DashboardContent extends StatelessWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: () => throw Exception(),
+                child: const Text('Throw Test Exception'),
+              ),
             ],
           ),
         ),
