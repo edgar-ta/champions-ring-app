@@ -3,6 +3,11 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Membership plans are public catalog data shown during registration.
+    match /membership_plans/{planId} {
+      allow read: if true;
+    }
+
     // Members
     match /members/{memberUid} {
 

@@ -32,8 +32,14 @@ setGlobalOptions({ maxInstances: 10 });
 // Create and deploy your first functions
 // https://firebase.google.com/docs/functions/get-started
 
+/**
+ * Añade la fecha de término a la renovación de un miembro.
+ */
 exports.addRenewalEndDate = onDocumentCreated(
-  "/members/{memberId}/renewals/{renewalId}",
+  {
+    document: "/members/{memberId}/renewals/{renewalId}",
+    database: "default",
+  },
   async (event) => {
     const renewalSnapshot = event.data;
     if (!renewalSnapshot) {
