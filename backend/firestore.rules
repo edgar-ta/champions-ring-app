@@ -2,6 +2,138 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Roles are determined by same-UID documents in their respective collections.
+    function canCreatePayments() {
+      return request.auth != null
+        && (
+          exists(/databases/$(database)/documents/clients/$(request.auth.uid))
+          || exists(/databases/$(database)/documents/members/$(request.auth.uid))
+          || exists(/databases/$(database)/documents/receptionists/$(request.auth.uid))
+          || exists(/databases/$(database)/documents/administrators/$(request.auth.uid))
+        );
+    }
+
+    function canApprovePayments() {
+      return request.auth != null
+        && (
+          exists(/databases/$(database)/documents/receptionists/$(request.auth.uid))
+          || exists(/databases/$(database)/documents/administrators/$(request.auth.uid))
+        );
+    }
+
+    function isTopLevelDocumentReference(reference, collectionName) {
+      return reference is path
+        && reference == /databases/$(database)/documents/$(collectionName)/$(reference[4]);
+    }
+
+    function isValidPayerReference(payerRef) {
+      return isTopLevelDocumentReference(payerRef, 'clients')
+        && exists(payerRef)
+        && (
+          payerRef == /databases/$(database)/documents/clients/$(request.auth.uid)
+          || canApprovePayments()
+        );
+    }
+
+    function isValidPayment(paymentUid) {
+      let payment = request.resource.data;
+      return payment.keys().hasAll([
+          'uid',
+          'type',
+          'amount',
+          'currency',
+          'creationDate'
+        ])
+        && payment.keys().hasOnly([
+          'uid',
+          'type',
+          'amount',
+          'currency',
+          'creationDate',
+          'approvalDate',
+          'checkoutUrl',
+          'mercadoPagoStatus',
+          'mercadoPagoPaymentId',
+          'preferenceId',
+          'referenceId',
+          'issuingEntity',
+          'issuingEntityName',
+          'approverRef',
+          'payerRef',
+          'deletionDate'
+        ])
+        && payment.uid == paymentUid
+        && payment.type in ['cash', 'direct-transfer', 'mercado-pago']
+        && payment.amount is number
+        && payment.amount > 0
+        && payment.currency in ['MXN', 'USD']
+        && payment.creationDate is timestamp
+        && (!('approvalDate' in payment) || payment.approvalDate is timestamp)
+        && (!('checkoutUrl' in payment) || payment.checkoutUrl is string)
+        && (!('mercadoPagoStatus' in payment)
+          || payment.mercadoPagoStatus in ['approved', 'rejected'])
+        && (!('mercadoPagoPaymentId' in payment)
+          || payment.mercadoPagoPaymentId is string)
+        && (!('preferenceId' in payment) || payment.preferenceId is string)
+        && (!('referenceId' in payment)
+          || (
+            payment.type == 'direct-transfer'
+            && payment.referenceId is string
+          ))
+        && (!('issuingEntity' in payment)
+          || (
+            payment.type == 'direct-transfer'
+            && payment.issuingEntity in [
+              'bbva',
+              'santander',
+              'banco-azteca',
+              'elektra',
+              'other'
+            ]
+          ))
+        && (!('issuingEntityName' in payment)
+          || (
+            payment.type == 'direct-transfer'
+            && payment.issuingEntity == 'other'
+            && payment.issuingEntityName is string
+          ))
+        && (!('approverRef' in payment) || payment.approverRef is path)
+        && (!('payerRef' in payment) || isValidPayerReference(payment.payerRef))
+        && (!('deletionDate' in payment) || payment.deletionDate is timestamp)
+        && (canApprovePayments()
+          || (
+            !('approvalDate' in payment)
+            && !('approverRef' in payment)
+            && !('deletionDate' in payment)
+            && (!('mercadoPagoStatus' in payment)
+              || payment.mercadoPagoStatus != 'approved')
+          ));
+    }
+
+    // Clients
+    match /clients/{clientUid} {
+      // The registration transaction reads the document before creating it.
+      allow get: if request.auth != null
+        && request.auth.uid == clientUid;
+
+      allow create: if request.auth != null
+        && request.auth.uid == clientUid
+        && request.resource.data.uid == clientUid;
+    }
+
+    // Payment creation is available to authenticated users with a role document.
+    match /payments/{paymentUid} {
+      // The payment repository reads the generated ID in a transaction before
+      // writing. Allow that lookup only while the payment does not exist.
+      allow get: if canCreatePayments()
+          && resource == null
+        || request.auth != null
+          && resource.data.payerRef
+            == /databases/$(database)/documents/clients/$(request.auth.uid);
+
+      allow create: if canCreatePayments()
+        && isValidPayment(paymentUid);
+    }
 
     // Membership plans are public catalog data shown during registration.
     match /membership_plans/{planId} {
@@ -28,13 +160,55 @@ service cloud.firestore {
 
       // Renewals
       match /renewals/{renewalUid} {
+        function isValidRenewal() {
+          let renewal = request.resource.data;
+          let memberRef = /databases/$(database)/documents/members/$(memberUid);
+          let clientRef = /databases/$(database)/documents/clients/$(memberUid);
+          let paymentRef = renewal.paymentRef;
+          let membershipPlanRef = renewal.membershipPlanRef;
+          return renewal.keys().hasAll([
+              'uid',
+              'startDate',
+              'endDate',
+              'membershipPlanRef',
+              'paymentRef',
+              'amount',
+              'creationDate'
+            ])
+            && renewal.keys().hasOnly([
+              'uid',
+              'startDate',
+              'endDate',
+              'membershipPlanRef',
+              'paymentRef',
+              'amount',
+              'creationDate'
+            ])
+            && renewal.uid == renewalUid
+            && renewal.startDate is timestamp
+            && renewal.endDate is timestamp
+            && isTopLevelDocumentReference(membershipPlanRef, 'membership_plans')
+            && isTopLevelDocumentReference(paymentRef, 'payments')
+            && renewal.amount is number
+            && renewal.amount > 0
+            && renewal.creationDate is timestamp
+            && exists(memberRef)
+            && exists(clientRef)
+            && exists(membershipPlanRef)
+            && exists(paymentRef)
+            && get(paymentRef).data.payerRef == clientRef;
+        }
 
         // A member can read their own renewals.
         allow read: if request.auth != null
           && request.auth.uid == memberUid;
 
-        // Members cannot create, modify or delete renewals.
-        allow write: if false;
+        // A member can create a renewal only in their own subcollection.
+        allow create: if request.auth != null
+          && request.auth.uid == memberUid
+          && isValidRenewal();
+
+        allow update, delete: if false;
       }
     }
   }
