@@ -1,7 +1,5 @@
 import 'dart:typed_data';
 
-import 'package:champions_ring_app/core/models/core_user.dart'
-    show CoreUserType;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -198,7 +196,6 @@ class _PersonalDataFormState extends State<PersonalDataForm> {
       MemberInscription_PersonalData(
         name: _firstNameCtrl.text.trim(),
         lastName: _lastNameCtrl.text.trim(),
-        type: widget.initialData?.type ?? CoreUserType.member,
         birthDate: birthDate,
         email: _emailCtrl.text.trim(),
         phone: phone,

@@ -4,7 +4,7 @@ import 'package:champions_ring_app/core/models/core_client.dart';
 import 'package:champions_ring_app/core/models/core_date.dart';
 import 'package:champions_ring_app/core/models/core_member.dart';
 import 'package:champions_ring_app/core/models/core_payment.dart'
-    show CorePaymentCurrency, CorePaymentType;
+    show CorePaymentCurrency, CorePaymentIssuingEntity, CorePaymentType;
 import 'package:champions_ring_app/core/models/core_renewal.dart';
 import 'package:champions_ring_app/core/repositories/core_client_repository.dart';
 import 'package:champions_ring_app/core/repositories/core_member_repository.dart';
@@ -73,7 +73,11 @@ class InscriptionService {
         (!personal.isOfLegalAge &&
             (id.curpBytes == null || id.curpFormat == null)) ||
         plan == null ||
-        (!previousInscription.previouslySignedIn && payment == null)) {
+        (!previousInscription.previouslySignedIn &&
+            (payment == null ||
+                (payment.paymentMethod == CorePaymentType.directTransfer &&
+                    (payment.referenceId?.trim().isNotEmpty ?? false) ==
+                        false)))) {
       return MemberInscriptionError.missingInscriptionData;
     }
 
@@ -140,9 +144,10 @@ class InscriptionService {
         name: personal.name,
         lastName: personal.lastName,
         email: personal.email,
+        creationDate: CoreDate.ofWriteTime(),
       );
       await CoreClientRepository()
-          .upsertCoreClient(coreClient)
+          .upsert(coreClient)
           .timeout(const Duration(seconds: 15));
 
       final coreMember = CoreMember(
@@ -168,7 +173,8 @@ class InscriptionService {
         ineFrontValidated: false,
         creationDate: CoreDate.ofWriteTime(),
       );
-      await CoreMemberRepository()
+      final memberRepository = CoreMemberRepository();
+      await memberRepository
           .upsert(coreMember)
           .timeout(const Duration(seconds: 15));
 
@@ -182,6 +188,7 @@ class InscriptionService {
               uid: paymentUid,
               amount: selectedPlan.cost,
               currency: CorePaymentCurrency.mxn,
+              payerRef: CoreClientRepository().myCollection.doc(uid),
               creationDate: CoreDate.ofWriteTime(),
             );
             await paymentRepository
@@ -189,6 +196,24 @@ class InscriptionService {
                 .timeout(const Duration(seconds: 15));
             break;
           case CorePaymentType.directTransfer:
+            final paymentSelection = data.paymentSelectionData!;
+            final directTransferPayment = DirectTransferPayment(
+              uid: paymentUid,
+              amount: selectedPlan.cost,
+              currency: CorePaymentCurrency.mxn,
+              referenceId: paymentSelection.referenceId!.trim(),
+              issuingEntity: paymentSelection.issuingEntity!,
+              issuingEntityName:
+                  paymentSelection.issuingEntity ==
+                      CorePaymentIssuingEntity.other
+                  ? paymentSelection.issuingEntityName!.trim()
+                  : null,
+              payerRef: CoreClientRepository().myCollection.doc(uid),
+              creationDate: CoreDate.ofWriteTime(),
+            );
+            await paymentRepository
+                .upsert(directTransferPayment.toCorePayment())
+                .timeout(const Duration(seconds: 15));
             break;
           case CorePaymentType.mercadoPago:
             break;
@@ -211,7 +236,6 @@ class InscriptionService {
               ),
             )
             .timeout(const Duration(seconds: 15));
-        // luego de definir la id del pago, tengo que crear la renovación
       }
 
       return Success(result: uid);

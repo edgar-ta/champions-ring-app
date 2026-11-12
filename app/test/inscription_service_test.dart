@@ -37,9 +37,10 @@ void main() {
       required MemberInscription_PersonalData personal,
       MemberInscription_IdData? id,
       MemberInscription_PaymentSelectionData? payment,
+      bool previouslySignedIn = true,
     }) => MemberInscriptionData(
       previousInscriptionData: MemberInscription_PreviousInscriptionData(
-        previouslySignedIn: true,
+        previouslySignedIn: previouslySignedIn,
       ),
       personalData: personal,
       idData: id ?? completeIdData(),
@@ -161,6 +162,28 @@ void main() {
           membershipPlanUid: 'plan-uid',
         ),
         paymentSelectionData: null,
+      );
+
+      // ACT
+      final result = await service.signIn(data);
+
+      // ASSERT
+      expect(result, isA<Error<MemberInscriptionError, String>>());
+      expect(
+        (result as Error<MemberInscriptionError, String>).errorType,
+        MemberInscriptionError.missingInscriptionData,
+      );
+    });
+
+    test('rechaza transferencias directas sin referencia bancaria', () async {
+      // ARRANGE
+      final data = completeData(
+        personal: personalData(birthDate: DateTime(1990, 1, 1)),
+        previouslySignedIn: false,
+        payment: MemberInscription_PaymentSelectionData(
+          paymentMethod: CorePaymentType.directTransfer,
+          referenceId: '   ',
+        ),
       );
 
       // ACT

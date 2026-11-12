@@ -9,6 +9,7 @@ sealed class Payment {
   final CoreDate? approvalDate;
   final CoreDate creationDate;
   final CoreDate? deletionDate;
+  final DocumentReference<Map<String, dynamic>>? payerRef;
 
   const Payment({
     required this.uid,
@@ -17,6 +18,7 @@ sealed class Payment {
     this.approvalDate,
     required this.creationDate,
     this.deletionDate,
+    this.payerRef,
   });
 
   CorePayment toCorePayment();
@@ -30,6 +32,7 @@ class CashPayment extends Payment {
     required super.amount,
     required super.currency,
     super.approvalDate,
+    super.payerRef,
     this.approverRef,
     required super.creationDate,
     super.deletionDate,
@@ -43,6 +46,7 @@ class CashPayment extends Payment {
     currency: currency,
     approvalDate: approvalDate,
     approverRef: approverRef,
+    payerRef: payerRef,
     creationDate: creationDate,
     deletionDate: deletionDate,
   );
@@ -50,6 +54,8 @@ class CashPayment extends Payment {
 
 class DirectTransferPayment extends Payment {
   final String referenceId;
+  final CorePaymentIssuingEntity issuingEntity;
+  final String? issuingEntityName;
   final DocumentReference<Map<String, dynamic>>? approverRef;
 
   const DirectTransferPayment({
@@ -57,7 +63,10 @@ class DirectTransferPayment extends Payment {
     required super.amount,
     required super.currency,
     super.approvalDate,
+    super.payerRef,
     required this.referenceId,
+    required this.issuingEntity,
+    this.issuingEntityName,
     this.approverRef,
     required super.creationDate,
     super.deletionDate,
@@ -71,7 +80,10 @@ class DirectTransferPayment extends Payment {
     currency: currency,
     approvalDate: approvalDate,
     referenceId: referenceId,
+    issuingEntity: issuingEntity,
+    issuingEntityName: issuingEntityName,
     approverRef: approverRef,
+    payerRef: payerRef,
     creationDate: creationDate,
     deletionDate: deletionDate,
   );
@@ -88,6 +100,7 @@ class MercadoPagoPayment extends Payment {
     required super.amount,
     required super.currency,
     super.approvalDate,
+    super.payerRef,
     required this.checkoutUrl,
     required this.status,
     required this.mercadoPagoPaymentId,
@@ -107,6 +120,7 @@ class MercadoPagoPayment extends Payment {
     mercadoPagoStatus: status,
     mercadoPagoPaymentId: mercadoPagoPaymentId,
     preferenceId: preferenceId,
+    payerRef: payerRef,
     creationDate: creationDate,
     deletionDate: deletionDate,
   );

@@ -1,9 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:champions_ring_app/core/models/core_payment.dart'
-    show CorePaymentType;
-import 'package:champions_ring_app/core/models/core_user.dart'
-    show CoreUserType;
+    show CorePaymentIssuingEntity, CorePaymentType;
 
 class MemberInscription_PreviousInscriptionData {
   final bool previouslySignedIn;
@@ -16,7 +14,6 @@ class MemberInscription_PersonalData {
   final String photoFormat;
   final String name;
   final String lastName;
-  final CoreUserType type;
   final DateTime birthDate;
   final String email;
   final String phone;
@@ -37,7 +34,6 @@ class MemberInscription_PersonalData {
     this.guardianName,
     this.guardianPhone,
     this.guardianRelationship,
-    this.type = CoreUserType.member,
   });
 
   bool get isOfLegalAge {
@@ -93,8 +89,16 @@ class MemberInscription_PlanSelectionData {
 
 class MemberInscription_PaymentSelectionData {
   final CorePaymentType paymentMethod;
+  final String? referenceId;
+  final CorePaymentIssuingEntity? issuingEntity;
+  final String? issuingEntityName;
 
-  MemberInscription_PaymentSelectionData({required this.paymentMethod});
+  MemberInscription_PaymentSelectionData({
+    required this.paymentMethod,
+    this.referenceId,
+    this.issuingEntity,
+    this.issuingEntityName,
+  });
 }
 
 /// Estado agregado del wizard, dividido por paso para poder restaurarlo.

@@ -9,13 +9,17 @@ class CoreClient extends FirestoreEntity {
   final String email;
 
   final CoreDate? sampleClassDate;
+  final CoreDate creationDate;
+  final CoreDate? deletionDate;
 
   const CoreClient({
     required this.uid,
     required this.name,
     required this.lastName,
     required this.email,
+    required this.creationDate,
     this.sampleClassDate,
+    this.deletionDate,
   });
 
   @override
@@ -25,9 +29,11 @@ class CoreClient extends FirestoreEntity {
       'name': name,
       'lastName': lastName,
       'email': email,
+      'creationDate': creationDate.toFirebaseValue(),
 
       if (sampleClassDate != null)
         'sampleClassDate': sampleClassDate!.toFirebaseValue(),
+      if (deletionDate != null) 'deletionDate': deletionDate!.toFirebaseValue(),
     };
   }
 }

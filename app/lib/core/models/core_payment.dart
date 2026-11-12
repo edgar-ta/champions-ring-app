@@ -30,6 +30,19 @@ enum CoreMercadoPagoStatus {
   const CoreMercadoPagoStatus(this.serialization);
 }
 
+enum CorePaymentIssuingEntity {
+  bbva('bbva', 'BBVA'),
+  santander('santander', 'Santander'),
+  bancoAzteca('banco-azteca', 'Banco Azteca'),
+  elektra('elektra', 'Elektra'),
+  other('other', 'Otra');
+
+  final String serialization;
+  final String name;
+
+  const CorePaymentIssuingEntity(this.serialization, this.name);
+}
+
 class CorePayment extends FirestoreEntity {
   @override
   final String uid;
@@ -47,9 +60,14 @@ class CorePayment extends FirestoreEntity {
 
   // Transferencia bancaria
   final String? referenceId;
+  final CorePaymentIssuingEntity? issuingEntity;
+  final String? issuingEntityName;
 
   // Efectivo y transferencia bancaria
   final DocumentReference<Map<String, dynamic>>? approverRef;
+
+  // Cliente asociado al pago.
+  final DocumentReference<Map<String, dynamic>>? payerRef;
 
   final CoreDate creationDate;
   final CoreDate? deletionDate;
@@ -65,7 +83,10 @@ class CorePayment extends FirestoreEntity {
     this.mercadoPagoPaymentId,
     this.preferenceId,
     this.referenceId,
+    this.issuingEntity,
+    this.issuingEntityName,
     this.approverRef,
+    this.payerRef,
     required this.creationDate,
     this.deletionDate,
   });
@@ -90,9 +111,14 @@ class CorePayment extends FirestoreEntity {
 
       // Transferencia bancaria
       if (referenceId != null) 'referenceId': referenceId,
+      if (issuingEntity != null)
+        'issuingEntity': issuingEntity!.serialization,
+      if (issuingEntityName != null) 'issuingEntityName': issuingEntityName,
 
       // Efectivo y transferencia bancaria
       if (approverRef != null) 'approverRef': approverRef,
+
+      if (payerRef != null) 'payerRef': payerRef,
 
       if (deletionDate != null) 'deletionDate': deletionDate!.toFirebaseValue(),
     };

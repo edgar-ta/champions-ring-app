@@ -7,14 +7,6 @@ class CoreClientRepository extends BaseRepository<CoreClient> {
   @override
   String get collectionName => 'clients';
 
-  /// Inserts a new `client` document in Firestore or updates an already existing
-  /// one with the same uid as the object given.
-  ///
-  /// Returns `true` only if the document was just created.
-  Future<bool> upsertCoreClient(CoreClient client) => upsert(client);
-
-  Future<CoreClient> getCoreClientById(String uid) => getById(uid);
-
   @override
   Future<CoreClient> getById(String uid) async {
     final snapshot = await myCollection.doc(uid).get();
@@ -24,14 +16,19 @@ class CoreClientRepository extends BaseRepository<CoreClient> {
     }
 
     final sampleClassDate = data['sampleClassDate'];
+    final deletionDate = data['deletionDate'];
     return CoreClient(
       uid: data['uid'] as String,
       name: data['name'] as String,
       lastName: data['lastName'] as String,
       email: data['email'] as String,
+      creationDate: CoreDate.fromTimestamp(data['creationDate'] as Timestamp),
       sampleClassDate: sampleClassDate == null
           ? null
           : CoreDate.fromTimestamp(sampleClassDate as Timestamp),
+      deletionDate: deletionDate == null
+          ? null
+          : CoreDate.fromTimestamp(deletionDate as Timestamp),
     );
   }
 }

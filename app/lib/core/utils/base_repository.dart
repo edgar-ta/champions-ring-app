@@ -6,6 +6,11 @@ abstract class BaseRepository<Entity extends FirestoreEntity> {
   String get collectionName;
   CollectionReference<Map<String, dynamic>> get myCollection =>
       FirestoreInstance.instance.collection(collectionName);
+
+  /// Inserts a new document in Firestore or updates an already existing
+  /// one with the same uid as the object given.
+  ///
+  /// Returns `true` only if the document was just created.
   Future<bool> upsert(Entity entity) {
     final firestore = FirestoreInstance.instance;
     final memberDocument = myCollection.doc(entity.uid);

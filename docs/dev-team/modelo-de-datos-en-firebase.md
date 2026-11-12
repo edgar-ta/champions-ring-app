@@ -1,6 +1,6 @@
 # Modelo de Datos en Firebase
 
-Versión 19.0.0
+Versión 20.0.0
 
 ## Clasificación de Cambios
 - Cambios mayores
@@ -27,67 +27,70 @@ Versión 19.0.0
 clients
 	uid: string
 	name: string
-	last_name: string
+	lastName: string
 	email: string
 
-	sample_class_date: timestamp?
+	sampleClassDate: timestamp?
+
+	creationDate: timestamp
+	deletionDate: timestamp?
 
 members
 	uid: string
-	birth_date: timestamp
+	birthDate: timestamp
 	phone: string
-	photo_url: string?
-	legal_data_are_theirs: boolean
-	inscription_paid: boolean
+	photoUrl: string?
+	legalDataAreTheirs: boolean
+	inscriptionPaid: boolean
 
-	membership_plan_ref: reference?
-	latest_renewal_ref: reference?
+	membershipPlanRef: reference?
+	latestRenewalRef: reference?
 
-	guardian_name: string?
-	guardian_phone: string?
-	guardian_relationship: string?
-	curp_url: string?
-	curp_validated: boolean?
+	guardianName: string?
+	guardianPhone: string?
+	guardianRelationship: string?
+	curpUrl: string?
+	curpValidated: boolean?
 
-	ine_back_url: string
-	ine_back_validated: boolean
-	ine_front_url: string
-	ine_front_validated: boolean
+	ineBackUrl: string
+	ineBackValidated: boolean
+	ineFrontUrl: string
+	ineFrontValidated: boolean
 
-	waiver_agreement_url: string?
-	waiver_agreement_validated: boolean?
+	waiverAgreementUrl: string?
+	waiverAgreementValidated: boolean?
 
-	creation_date: timestamp
-	deletion_date: timestamp?
+	creationDate: timestamp
+	deletionDate: timestamp?
 
 	renewals/
 		uid: string
-		start_date: timestamp
-		end_date: timestamp
-		membership_plan_ref: reference?
-		payment_ref: reference
+		startDate: timestamp
+		endDate: timestamp
+		membershipPlanRef: reference?
+		paymentRef: reference
 		amount: double
 
-		creation_date: timestamp
-		deletion_date: timestamp?
+		creationDate: timestamp
+		deletionDate: timestamp?
 
 receptionists
 	uid: string
 	name: string
-	last_name: string
+	lastName: string
 	email: string
 
-	creation_date: timestamp
-	deletion_date: timestamp?
+	creationDate: timestamp
+	deletionDate: timestamp?
 
 administrators
 	uid: string
 	name: string
-	last_name: string
+	lastName: string
 	email: string
 
-	creation_date: timestamp
-	deletion_date: timestamp?
+	creationDate: timestamp
+	deletionDate: timestamp?
 
 membership_plans
 	uid: string
@@ -95,8 +98,8 @@ membership_plans
 	benefits: string
 	duration: "1d" | "1w" | "1m"
 
-	creation_date: timestamp
-	deletion_date: timestamp?
+	creationDate: timestamp
+	deletionDate: timestamp?
 
 payments
 	uid: string
@@ -104,21 +107,24 @@ payments
 
 	amount: double
 	currency: "MXN" | "USD"
-	approval_date: timestamp?
+	approvalDate: timestamp?
+	payerRef: ref?
 
 	-- mercado-pago only
-	checkout_url: string?
+	checkoutUrl: string?
 	status: ("approved" | "rejected")?
-	mercado_pago_payment_id: string?
-	preference_id: string?
+	mercadoPagoPaymentId: string?
+	preferenceId: string?
 
 	-- direct-transfer only
-	reference_id: string?
+	referenceId: string?
+	issuingEntity: ("bbva" | "santander" | "banco-azteca" | "elektra" | "other")?
+	issuingEntityName: string?
 
 	-- cash & direct-transfer
-	approver_ref: ref?
+	approverRef: ref?
 
-	creation_date: timestamp
-	deletion_date: timestamp?
+	creationDate: timestamp
+	deletionDate: timestamp?
 
 ```

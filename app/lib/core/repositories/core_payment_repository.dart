@@ -35,6 +35,15 @@ class CorePaymentRepository extends BaseRepository<CorePayment> {
       );
     }
 
+    final payerRef = payment.payerRef;
+    if (payerRef != null && payerRef.parent.path != 'clients') {
+      throw ArgumentError.value(
+        payerRef.path,
+        'payment.payerRef',
+        'Must reference a client document.',
+      );
+    }
+
     final paymentDocument = myCollection.doc(payment.uid);
 
     return myCollection.firestore.runTransaction((transaction) async {
@@ -69,6 +78,7 @@ class CorePaymentRepository extends BaseRepository<CorePayment> {
     final type = _paymentTypeFromSerialization(data['type'] as String);
     final currency = _currencyFromSerialization(data['currency'] as String);
     final mercadoPagoStatus = data['mercadoPagoStatus'] as String?;
+    final issuingEntity = data['issuingEntity'] as String?;
 
     return CorePayment(
       uid: data['uid'] as String,
@@ -85,8 +95,13 @@ class CorePaymentRepository extends BaseRepository<CorePayment> {
       mercadoPagoPaymentId: data['mercadoPagoPaymentId'] as String?,
       preferenceId: data['preferenceId'] as String?,
       referenceId: data['referenceId'] as String?,
+      issuingEntity: issuingEntity == null
+          ? null
+          : _issuingEntityFromSerialization(issuingEntity),
+      issuingEntityName: data['issuingEntityName'] as String?,
       approverRef:
           data['approverRef'] as DocumentReference<Map<String, dynamic>>?,
+      payerRef: data['payerRef'] as DocumentReference<Map<String, dynamic>>?,
       creationDate: CoreDate.fromTimestamp(creationDate),
       deletionDate: deletionDate == null
           ? null
@@ -114,5 +129,15 @@ class CorePaymentRepository extends BaseRepository<CorePayment> {
         'approved' => CoreMercadoPagoStatus.approved,
         'rejected' => CoreMercadoPagoStatus.rejected,
         _ => throw FormatException('Unknown Mercado Pago status "$value".'),
+      };
+
+  CorePaymentIssuingEntity _issuingEntityFromSerialization(String value) =>
+      switch (value) {
+        'bbva' => CorePaymentIssuingEntity.bbva,
+        'santander' => CorePaymentIssuingEntity.santander,
+        'banco-azteca' => CorePaymentIssuingEntity.bancoAzteca,
+        'elektra' => CorePaymentIssuingEntity.elektra,
+        'other' => CorePaymentIssuingEntity.other,
+        _ => throw FormatException('Unknown payment issuing entity "$value".'),
       };
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/models/core_payment.dart' show CorePaymentType;
 import '../../../core/models/core_membership_plan.dart';
 import '../../../core/repositories/core_membership_plan_repository.dart';
 import '../../../core/utils/result.dart';
@@ -65,8 +66,7 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
     );
   }
 
-  bool _isMembershipPlanStep(int step) =>
-      step == (_isReturningMember ? 4 : 3);
+  bool _isMembershipPlanStep(int step) => step == (_isReturningMember ? 4 : 3);
 
   Future<void> _loadActiveMembershipPlans() async {
     setState(() {
@@ -152,6 +152,12 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
       _showError('Completa todos los pasos del registro.');
       return;
     }
+    if (!_isReturningMember &&
+        payment?.paymentMethod == CorePaymentType.directTransfer &&
+        (payment?.referenceId?.trim().isNotEmpty ?? false) == false) {
+      _showError('Captura la referencia bancaria de la transferencia.');
+      return;
+    }
     if (personal.photoBytes.length > 5 * 1024 * 1024) {
       _showError('La foto de perfil no debe superar 5 MB.');
       return;
@@ -212,8 +218,13 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
             MaterialPageRoute(builder: (_) => const HomeScreen()),
             (_) => false,
           );
-        case Error<MemberInscriptionError, String>(:final errorType):
+        case Error<MemberInscriptionError, String>(
+          :final errorType,
+          :final exception,
+        ):
           _showError(errorType.message);
+          print("The exception is");
+          print(exception);
       }
     } catch (e) {
       _showError('No se pudo completar el registro: $e');
