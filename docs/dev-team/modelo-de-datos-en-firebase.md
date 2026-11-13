@@ -1,6 +1,6 @@
 # Modelo de Datos en Firebase
 
-Versión 20.0.0
+Versión 21.0.0
 
 ## Clasificación de Cambios
 - Cambios mayores
@@ -67,7 +67,7 @@ members
 		uid: string
 		startDate: timestamp
 		endDate: timestamp
-		membershipPlanRef: reference?
+		membershipPlanRef: reference
 		paymentRef: reference
 		amount: double
 

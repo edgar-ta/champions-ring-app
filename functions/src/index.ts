@@ -9,6 +9,9 @@ import {
 import {defineSecret} from "firebase-functions/params";
 import {onCall, onRequest, HttpsError} from "firebase-functions/v2/https";
 import {createHmac, timingSafeEqual} from "node:crypto";
+import {
+  validateMembershipPlanUid,
+} from "./functions/create_membership_checkout.js";
 
 // Control de costos: máximo de contenedores simultáneos por función.
 setGlobalOptions({maxInstances: 10});
@@ -272,6 +275,7 @@ export const createMembershipCheckout = onCall(
 
     const uid = request.auth.uid;
     const type: unknown = request.data?.membershipType;
+    const membershipPlanUid: unknown = request.data?.membershipPlanUid;
 
     if (!isMembershipType(type)) {
       throw new HttpsError(
@@ -280,7 +284,8 @@ export const createMembershipCheckout = onCall(
       );
     }
 
-    const membership = MEMBERSHIPS[type];
+    const membershipPlan =
+      await validateMembershipPlanUid(membershipPlanUid, db);
 
     const userSnapshot = await db.collection("users").doc(uid).get();
 
@@ -296,7 +301,7 @@ export const createMembershipCheckout = onCall(
       type,
       userData.registration_payed === true
     );
-    const totalAmount = membership.amount + registrationFee;
+    const totalAmount = membershipPlan.cost + registrationFee;
 
     // Si hay un checkout reciente igual, se reutiliza (evita acumular
     // documentos "pending" cuando el usuario toca el botón varias veces).
@@ -329,8 +334,8 @@ export const createMembershipCheckout = onCall(
     await paymentRef.set({
       uid,
       membershipType: type,
-      membershipPlanId: membership.planId,
-      membershipAmount: membership.amount,
+      membershipPlanId: membershipPlan.uid,
+      membershipAmount: membershipPlan.cost,
       registrationFee,
       amount: totalAmount,
       currency: "MXN",
@@ -343,10 +348,10 @@ export const createMembershipCheckout = onCall(
     const items: Array<Record<string, unknown>> = [
       {
         id: type,
-        title: membership.label,
+        title: membershipPlan.name ?? MEMBERSHIPS[type].label,
         quantity: 1,
         currency_id: "MXN",
-        unit_price: membership.amount,
+        unit_price: membershipPlan.cost,
       },
     ];
 
