@@ -57,3 +57,8 @@
 /docs/**/*.mp4
 /docs/**/*.svg
 .env
+
+/app/android/.kotlin/
+
+/backend/functions/node_modules
+/backend/node_modules
