@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:champions_ring_app/core/models/core_user.dart'
     show CoreUserType;
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -10,6 +11,7 @@ import '../../../shared/widgets/phone_number_input.dart';
 
 const Color kRojo = Color(0xFFEA3A3F);
 const Color _gris = Color(0xFF6B6B6B);
+final _emailPattern = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
 
 class PersonalDataForm extends StatefulWidget {
   final void Function(UserInscription_PersonalData usuario) onSubmit;
@@ -41,10 +43,21 @@ class _PersonalDataFormState extends State<PersonalDataForm> {
   bool _seePassword = false;
   bool _seePasswordConfirmation = false;
 
+  final _emailFieldKey = GlobalKey<FormFieldState<String>>();
+  final _emailFocus = FocusNode();
+  // Último resultado de checkEmailAvailable, por correo normalizado.
+  String? _checkedEmail;
+  bool? _checkedEmailAvailable;
+  bool _checkingEmail = false;
+  bool _submitting = false;
+
   @override
   void initState() {
     super.initState();
     _restoreData(widget.initialData);
+    _emailFocus.addListener(() {
+      if (!_emailFocus.hasFocus) _checkEmail();
+    });
   }
 
   @override
@@ -103,7 +116,70 @@ class _PersonalDataFormState extends State<PersonalDataForm> {
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
     _passwordConfirmationCtrl.dispose();
+    _emailFocus.dispose();
     super.dispose();
+  }
+
+  String get _normalizedEmail => _emailCtrl.text.trim().toLowerCase();
+
+  /// Consulta en el servidor si el correo ya tiene cuenta. Devuelve null si
+  /// no se pudo verificar (sin conexión, etc.); en ese caso se deja
+  /// continuar y el error se detecta al crear la cuenta.
+  Future<bool?> _checkEmail() async {
+    final email = _normalizedEmail;
+    if (!_emailPattern.hasMatch(email)) return null;
+    if (email == _checkedEmail) return _checkedEmailAvailable;
+
+    setState(() => _checkingEmail = true);
+    bool? available;
+    try {
+      final response =
+          await FirebaseFunctions.instanceFor(region: 'us-central1')
+              .httpsCallable('checkEmailAvailable')
+              .call<Map<String, dynamic>>({'email': email});
+      available = response.data['available'] as bool?;
+    } catch (e) {
+      debugPrint('No se pudo verificar el correo: $e');
+    }
+    if (!mounted) return available;
+
+    setState(() {
+      _checkingEmail = false;
+      // Solo se guarda si el usuario no cambió el correo mientras tanto.
+      if (available != null && email == _normalizedEmail) {
+        _checkedEmail = email;
+        _checkedEmailAvailable = available;
+      }
+    });
+    _emailFieldKey.currentState?.validate();
+    return available;
+  }
+
+  String? _validateEmail(String? v) {
+    final email = v?.trim().toLowerCase() ?? '';
+    if (email.isEmpty) return 'Campo requerido';
+    if (!_emailPattern.hasMatch(email)) return 'Correo inválido';
+    if (email == _checkedEmail && _checkedEmailAvailable == false) {
+      return 'Este correo ya está registrado. Inicia sesión.';
+    }
+    return null;
+  }
+
+  Widget? _buildEmailStatusIcon() {
+    if (_checkingEmail) {
+      return const Padding(
+        padding: EdgeInsets.all(14),
+        child: SizedBox(
+          width: 18,
+          height: 18,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      );
+    }
+    if (_normalizedEmail == _checkedEmail && _checkedEmailAvailable == true) {
+      return const Icon(Icons.check_circle, color: Color(0xFF2E9E5B));
+    }
+    return null;
   }
 
   Future<void> _pickPhoto() async {
@@ -155,9 +231,19 @@ class _PersonalDataFormState extends State<PersonalDataForm> {
     }
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     final form = _formKey.currentState;
-    if (form == null || !form.validate()) return;
+    if (form == null || !form.validate() || _submitting) return;
+
+    // Por si escribió el correo y tocó CONTINUAR sin salir del campo.
+    setState(() => _submitting = true);
+    final available = await _checkEmail();
+    if (!mounted) return;
+    setState(() => _submitting = false);
+    if (available == false) {
+      _emailFieldKey.currentState?.validate();
+      return;
+    }
 
     final birthDate = _birthDate;
     final phone = _phoneValue;
@@ -272,6 +358,8 @@ class _PersonalDataFormState extends State<PersonalDataForm> {
   Widget build(BuildContext context) {
     return Form(
       key: _formKey,
+      // Muestra los errores mientras se llena, no solo al final.
+      autovalidateMode: AutovalidateMode.onUserInteraction,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -375,21 +463,18 @@ class _PersonalDataFormState extends State<PersonalDataForm> {
                 ? 'Correo electrónico'
                 : 'Correo electrónico de contacto',
             TextFormField(
+              key: _emailFieldKey,
               controller: _emailCtrl,
+              focusNode: _emailFocus,
               keyboardType: TextInputType.emailAddress,
+              autocorrect: false,
+              onChanged: (_) => setState(() {}),
               decoration: _buildInputDecoration(
                 'tu-correo@ejemplo.com',
                 Icons.mail_outline,
+                sufijo: _buildEmailStatusIcon(),
               ),
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) {
-                  return 'Campo requerido';
-                }
-                if (!v.contains('@') || !v.contains('.')) {
-                  return 'Correo inválido';
-                }
-                return null;
-              },
+              validator: _validateEmail,
             ),
           ),
 
@@ -454,7 +539,7 @@ class _PersonalDataFormState extends State<PersonalDataForm> {
             width: double.infinity,
             height: 52,
             child: ElevatedButton(
-              onPressed: _submit,
+              onPressed: _submitting ? null : _submit,
               style: ElevatedButton.styleFrom(
                 backgroundColor: kRojo,
                 foregroundColor: Colors.white,

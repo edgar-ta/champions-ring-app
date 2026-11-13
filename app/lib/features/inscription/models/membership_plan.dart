@@ -5,6 +5,7 @@ class MembershipPlan {
   final String title;
   final String validity;
   final int price; // en MXN
+  final int durationDays; // igual que MEMBERSHIPS en functions/src/index.ts
   final List<String> benefits;
 
   const MembershipPlan({
@@ -13,6 +14,7 @@ class MembershipPlan {
     required this.title,
     required this.validity,
     required this.price,
+    required this.durationDays,
     required this.benefits,
   });
 }
@@ -24,6 +26,7 @@ const List<MembershipPlan> memberships = [
     title: 'Acceso por 1 semana',
     validity: 'Válido por 7 días naturales',
     price: 180,
+    durationDays: 7,
     benefits: [
       'Clases de boxeo ilimitadas',
       'Acceso completo a todas las áreas',
@@ -36,6 +39,7 @@ const List<MembershipPlan> memberships = [
     title: 'Acceso por 1 mes',
     validity: 'Suscripción mensual recurrente',
     price: 600,
+    durationDays: 30,
     benefits: [
       'Clases de boxeo y sparring ilimitadas',
       'Acceso preferente a eventos del club',

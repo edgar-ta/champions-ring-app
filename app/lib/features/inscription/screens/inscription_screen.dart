@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/services/mercado_pago_checkout_service.dart';
 import '../../../core/utils/result.dart';
 import '../models/user_inscription_data.dart';
 import '../services/inscription_service.dart';
@@ -11,6 +12,10 @@ import 'register_personal_data_screen.dart';
 import 'register_plan_selection_screen.dart';
 import 'register_waiver_agreement_screen.dart';
 import '../../home/screens/home_screen.dart';
+
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:champions_ring_app/core/models/core_user.dart'
+    show CorePaymentMethod;
 
 /// Contenedor del wizard: mantiene los datos de cada paso en UserFormData.
 class InscriptionScreen extends StatefulWidget {
@@ -144,11 +149,37 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
       if (!mounted) return;
       switch (result) {
         case Success<UserInscriptionError, String>():
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Registro completado. Tu sesión está iniciada.'),
-            ),
-          );
+          final payment = _formData.paymentSelectionData!;
+          final plan = _formData.planSelectionData!;
+
+          String? checkoutError;
+
+          if (payment.paymentMethod == CorePaymentMethod.mercadoPago &&
+              plan.membershipPlanId != 0) {
+            try {
+              await MercadoPagoCheckoutService.open(plan.membershipPlanId);
+            } on FirebaseFunctionsException catch (e) {
+              checkoutError = e.message ?? e.code;
+              debugPrint('Error al crear el checkout: ${e.code} ${e.message}');
+            } catch (e) {
+              checkoutError = '$e';
+              debugPrint('Error al crear el checkout: $e');
+            }
+          }
+
+          if (!mounted) return;
+
+          final message = checkoutError != null
+              ? 'Tu cuenta se creó, pero no se pudo abrir el pago '
+                    '($checkoutError). Inicia sesión e intenta pagar nuevamente.'
+              : payment.paymentMethod == CorePaymentMethod.mercadoPago &&
+                    plan.membershipPlanId != 0
+              ? 'Cuenta creada. Completa tu pago en Mercado Pago.'
+              : 'Registro completado. Tu sesión está iniciada.';
+
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(message)));
+
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (_) => const HomeScreen()),
             (_) => false,

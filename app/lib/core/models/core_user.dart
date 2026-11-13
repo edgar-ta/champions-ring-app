@@ -4,7 +4,7 @@ import 'core_date.dart';
 
 enum CoreUserType { administrator, member, receptionist }
 
-enum CorePaymentMethod { cash, card }
+enum CorePaymentMethod { cash , mercadoPago, card }
 
 class CoreUser {
   final DateTime birthDate;
@@ -18,6 +18,7 @@ class CoreUser {
   final String ineBackUrl;
   final String ineFrontUrl;
   final String lastName;
+  final String liabilityWaiverUrl;
   final bool legalDataAreTheirs;
   final int membershipPlanId;
   final String name;
@@ -25,7 +26,6 @@ class CoreUser {
   final String phone;
   final String photoUrl;
   final bool registrationPayed;
-  final String signatureUrl;
   final CoreUserType type;
   final String uid;
 
@@ -41,6 +41,7 @@ class CoreUser {
     required this.ineBackUrl,
     required this.ineFrontUrl,
     required this.lastName,
+    required this.liabilityWaiverUrl,
     required this.legalDataAreTheirs,
     required this.membershipPlanId,
     required this.name,
@@ -48,7 +49,6 @@ class CoreUser {
     required this.phone,
     required this.photoUrl,
     required this.registrationPayed,
-    required this.signatureUrl,
     required this.type,
     required this.uid,
   });
@@ -65,6 +65,7 @@ class CoreUser {
     'ine_back_url': ineBackUrl,
     'ine_front_url': ineFrontUrl,
     'last_name': lastName,
+    'liability_waiver_url': liabilityWaiverUrl,
     'legal_data_are_theirs': legalDataAreTheirs,
     'membership_plan_id': membershipPlanId,
     'name': name,
@@ -72,7 +73,6 @@ class CoreUser {
     'phone': phone,
     'photo_url': photoUrl,
     'registration_payed': registrationPayed,
-    'signature_url': signatureUrl,
     'type': type.name,
     'uid': uid,
   };

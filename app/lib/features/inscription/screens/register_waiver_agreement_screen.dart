@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+ import 'package:flutter/material.dart';
 
 import '../models/liability_waiver.dart';
 import '../models/user_inscription_data.dart';
@@ -52,7 +52,10 @@ class _RegisterWaiverAgreementScreenState
     }
     if (!mounted) return;
     widget.onDataChanged(
-      UserInscription_WaiverAgreementData(signatureBytes: bytes),
+      UserInscription_WaiverAgreementData(
+        signatureBytes: bytes,
+        signedAt: DateTime.now(),
+      ),
     );
     widget.onContinue();
   }

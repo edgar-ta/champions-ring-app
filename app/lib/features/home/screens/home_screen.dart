@@ -6,6 +6,9 @@ import '../../../core/firebase/firestore_instance.dart';
 import '../../login/screens/login_screen.dart';
 import './profile_screen.dart';
 import './documents_screen.dart';
+import '../widgets/logout_button.dart';
+import '../widgets/membership_status_view.dart';
+import '../widgets/status_card.dart' show kGris;
 
 const Color _rojo = Color(0xFFEA3A3F);
 const Color _fondo = Color(0xFFF5F5F5);

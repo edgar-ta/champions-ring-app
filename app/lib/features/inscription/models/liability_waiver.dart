@@ -1,7 +1,4 @@
 /// Texto de la carta responsiva.
-///
-/// IMPORTANTE: el texto de abajo es un borrador basado en el diseño.
-/// Sustitúyelo por el texto legal oficial revisado por tu asesor legal.
 const String liabilityWaiverTitle = 'CARTA DE LIBERACIÓN DE RESPONSABILIDAD';
 
 const List<String> liabilityWaiverParagraphs = [
