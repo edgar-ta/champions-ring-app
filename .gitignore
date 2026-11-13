@@ -24,6 +24,7 @@
 #.vscode/
 
 # Flutter/Dart/Pub related
+/app/android/.kotlin/
 /app/**/doc/api/
 /app/**/ios/Flutter/.last_build_id
 /app/.dart_tool/

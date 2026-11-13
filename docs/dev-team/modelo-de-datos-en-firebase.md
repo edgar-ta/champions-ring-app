@@ -116,6 +116,12 @@ payments
 	mercadoPagoPaymentId: string?
 	preferenceId: string?
 
+	// Cobro automático (solo lo escriben las Cloud Functions)
+	subscription_id: string? // documento en subscriptions
+	subscription_status: "pending" | "authorized" | "paused" | "cancelled"?
+	subscription_membership_type: "week" | "month"?
+	subscription_next_payment_at: timestamp?
+
 	-- direct-transfer only
 	referenceId: string?
 	issuingEntity: ("bbva" | "santander" | "banco-azteca" | "elektra" | "other")?
@@ -127,4 +133,19 @@ payments
 	creationDate: timestamp
 	deletionDate: timestamp?
 
+subscriptions // una por cada autorización de cobro automático
+	uid: string
+	membershipType: "week" | "month"
+	membershipPlanId: number
+	amount: number
+	currency: "MXN"
+	frequencyDays: number
+	status: "creating" | "creation_failed" | "pending" | "authorized" | "paused" | "cancelled"
+	preapprovalId: string // id de la suscripción en Mercado Pago
+	checkoutUrl: string
+	nextPaymentAt: timestamp?
+	createdAt: timestamp
 ```
+
+Cada cobro automático aprobado se registra también en `payments` con
+`source: "subscription"` y el id `mp_subscription_{authorizedPaymentId}`.

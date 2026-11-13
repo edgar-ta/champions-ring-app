@@ -36,9 +36,7 @@ class RegisterPaymentSummaryScreen extends StatelessWidget {
 
     return Column(
       children: [
-        Expanded(
-          child: _buildSummaryContent(plan, planCost, total),
-        ),
+        Expanded(child: _buildSummaryContent(plan, planCost, total)),
         RedButton(
           text: 'CONTINUAR',
           onPressed: isLoading || loadError != null || plan == null
@@ -84,7 +82,9 @@ class RegisterPaymentSummaryScreen extends StatelessWidget {
                     style: TextStyle(fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 8),
-                  Text(plan?.name ?? 'El plan seleccionado ya no está disponible'),
+                  Text(
+                    plan?.name ?? 'El plan seleccionado ya no está disponible',
+                  ),
                   if (plan != null) ...[
                     const SizedBox(height: 4),
                     Text(_durationDescription(plan.duration)),
@@ -104,9 +104,7 @@ class RegisterPaymentSummaryScreen extends StatelessWidget {
                     style: TextStyle(fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
-                    'Incluye un protector bucal y un par de vendas.',
-                  ),
+                  const Text('Incluye un protector bucal y un par de vendas.'),
                 ],
               ),
             ),
@@ -123,11 +121,7 @@ class RegisterPaymentSummaryScreen extends StatelessWidget {
                     amount: _enrollmentCost,
                   ),
                   const Divider(height: 24),
-                  _SummaryRow(
-                    label: 'Total',
-                    amount: total,
-                    emphasized: true,
-                  ),
+                  _SummaryRow(label: 'Total', amount: total, emphasized: true),
                 ],
               ),
             ),

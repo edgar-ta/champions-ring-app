@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:champions_ring_app/core/models/core_client.dart';
 import 'package:champions_ring_app/core/models/core_date.dart';
@@ -15,6 +16,7 @@ import 'package:champions_ring_app/core/services/member_storage_service.dart';
 import 'package:champions_ring_app/core/utils/result.dart';
 import 'package:champions_ring_app/features/inscription/models/member_inscription_data.dart';
 import 'package:champions_ring_app/features/inscription/models/payment.dart';
+import 'package:champions_ring_app/features/inscription/services/liability_waiver_pdf.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -28,6 +30,9 @@ enum MemberInscriptionError {
   ineFrontUploadFailed('No se pudo subir el anverso de la INE.'),
   ineBackUploadFailed('No se pudo subir el reverso de la INE.'),
   curpUploadFailed('No se pudo subir el CURP del usuario.'),
+  signatureUploadFailed('No se pudo subir la firma de la responsiva.'),
+  waiverGenerationFailed('No se pudo generar la carta responsiva firmada.'),
+  waiverUploadFailed('No se pudo subir la carta responsiva firmada.'),
   storageUnauthenticated('La sesión no permite subir archivos.'),
   storageUnauthorized('No hay permisos para subir los archivos.'),
   storageQuotaExceeded('Se agotó la cuota de almacenamiento disponible.'),
@@ -138,6 +143,7 @@ class InscriptionService {
               MemberInscriptionError.curpUploadFailed,
             )
           : null;
+
       final uid = authenticatedUser.uid;
       final coreClient = CoreClient(
         uid: uid,
