@@ -1,67 +1,148 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
-import { DashboardSidebar } from "../components/dashboard-sidebar";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 
-type Student = { id: string; name: string; age: number; membership: string; status: "Activo" | "Por vencer" | "Vencido"; expires: string; tone: string };
-const examples: Student[] = [
-  { id: "3841", name: "Carlos Mendoza Ruiz", age: 28, membership: "Mensual", status: "Activo", expires: "2025-10-28", tone: "sage" },
-  { id: "2842", name: "Regina Soto Alarcón", age: 32, membership: "Semanal", status: "Por vencer", expires: "2025-10-05", tone: "sand" },
-  { id: "2843", name: "Mateo Díaz Ramos", age: 15, membership: "Mensual", status: "Activo", expires: "2025-11-15", tone: "blue" },
-  { id: "1092", name: "Mario Ortiz Castillos", age: 45, membership: "Día", status: "Vencido", expires: "2025-09-30", tone: "slate" },
-  { id: "2845", name: "Andrea Silva Domínguez", age: 24, membership: "Anual", status: "Activo", expires: "2026-08-12", tone: "rose" },
-];
-const filters = ["Todos", "Activos", "Vencidos", "Por vencer", "Menores"] as const;
-const pageSize = 5;
-function normalize(value: string) { return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(); }
-function formatDate(value: string) {
-  const [year, month, day] = value.split("-");
-  return `${day}/${["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"][Number(month) - 1]}/${year}`;
+import { hasPendingDocuments, type Member } from "@/app/core/models/member";
+import { firestoreErrorMessage } from "@/app/core/utils/firebase-errors";
+import { formatDate } from "@/app/core/utils/format";
+import { STATUS_LABELS, type MemberSummary, type MembershipStatus } from "@/app/features/members/models/member-summary";
+import { VISITOR_LABELS, type VisitorKind, type VisitorSummary } from "@/app/features/members/models/visitor-summary";
+import { firebaseMemberRepository } from "@/app/features/members/repositories/firebase-member-repository";
+import { DashboardSidebar } from "../components/dashboard-sidebar";
+import { documentsOf } from "@/app/features/document-validation/components/member-documents";
+import { Avatar, StudentProfile, formatDateTime, isMinor, type Row } from "./student-profile";
+
+const filters = ["Todos", "Activos", "Por vencer", "Vencidos", "Sin membresía", "Docs. pendientes", "Menores", "Visitas", "Clase muestra"] as const;
+type Filter = typeof filters[number];
+const filterStatus: Partial<Record<Filter, MembershipStatus>> = { "Activos": "active", "Por vencer": "expiring", "Vencidos": "expired", "Sin membresía": "none" };
+const filterKind: Partial<Record<Filter, VisitorKind>> = { "Visitas": "visit", "Clase muestra": "sample" };
+const pageSize = 10;
+
+type LoadState = { status: "loading" } | { status: "error"; message: string } | { status: "ready"; rows: Row[] };
+
+function normalize(value: string) { return value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(); }
+const rowKey = (row: Row) => `${row.kind}-${row.uid}`;
+
+/** Resumen de documentos de un alumno para la tabla: completos, cuántos faltan o cuántos se rechazaron. */
+function documentStatus(row: Row): { label: string; detail: string; tone: "done" | "pending" | "rejected" } | null {
+  if (row.kind !== "member") return null;
+  const documents = documentsOf(row.member.record);
+  const validated = documents.filter(document => document.validated).length;
+  const rejected = documents.filter(document => document.rejection).length;
+  const missing = documents.length - validated;
+  const detail = `${validated} de ${documents.length} validados`;
+  if (missing === 0) return { label: "Completos", detail, tone: "done" };
+  if (rejected > 0) return { label: rejected === 1 ? "1 rechazado" : `${rejected} rechazados`, detail: missing > rejected ? `${detail} · ${missing - rejected} por revisar` : detail, tone: "rejected" };
+  return { label: missing === 1 ? "Falta 1" : `Faltan ${missing}`, detail, tone: "pending" };
 }
-function Avatar({ student }: { student: Student }) {
-  return <span className={`student-avatar ${student.tone}`} aria-hidden="true">{student.name.split(" ").slice(0, 2).map(part => part[0]).join("")}</span>;
+
+function toRows(members: MemberSummary[], visitors: VisitorSummary[]): Row[] {
+  const rows: Row[] = [
+    ...members.map(member => ({ kind: "member" as const, uid: member.uid, fullName: member.fullName, email: member.email, sortDate: member.creationDate?.getTime() ?? 0, member })),
+    ...visitors.map(visitor => ({ kind: visitor.kind, uid: visitor.uid, fullName: visitor.fullName, email: visitor.email, sortDate: (visitor.lastDate ?? visitor.creationDate)?.getTime() ?? 0, visitor })),
+  ];
+  // Lo más reciente primero: el registro del alumno, o la última visita o clase muestra.
+  return rows.sort((a, b) => b.sortDate - a.sortDate);
+}
+
+/** Celdas de Membresía, Estado y Fecha según el tipo de fila. */
+function rowDetails(row: Row): { plan: string; status: string; statusClass: string; date: Date | null; dateLabel: string } {
+  if (row.kind === "member") {
+    const { member } = row;
+    return { plan: member.planLabel ?? "—", status: STATUS_LABELS[member.status], statusClass: member.status, date: member.membershipEnd, dateLabel: "Vence" };
+  }
+  const { visitor } = row;
+  return {
+    plan: row.kind === "visit" ? `Visita${visitor.visits.length > 1 ? ` (${visitor.visits.length})` : ""}` : "Clase muestra",
+    status: VISITOR_LABELS[row.kind],
+    statusClass: row.kind,
+    date: visitor.lastDate,
+    dateLabel: row.kind === "visit" ? "Última visita" : "Clase muestra",
+  };
 }
 
 export function StudentsScreen() {
-  const [students, setStudents] = useState(examples);
+  const [state, setState] = useState<LoadState>({ status: "loading" });
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<typeof filters[number]>("Todos");
+  const [filter, setFilter] = useState<Filter>("Todos");
   const [page, setPage] = useState(0);
   const [notice, setNotice] = useState("");
-  const [selected, setSelected] = useState<Student | null>(null);
-  const registerDialog = useRef<HTMLDialogElement>(null);
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const profileDialog = useRef<HTMLDialogElement>(null);
+
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("registrar") === "1") registerDialog.current?.showModal();
+    let active = true;
+    (async () => {
+      const members = await firebaseMemberRepository.listMembers();
+      const visitors = await firebaseMemberRepository.listVisitors(new Set(members.map(member => member.uid)));
+      return toRows(members, visitors);
+    })()
+      .then(rows => { if (active) setState({ status: "ready", rows }); })
+      .catch(error => { console.error(error); if (active) setState({ status: "error", message: firestoreErrorMessage(error, "cargar los alumnos") }); });
+    return () => { active = false; };
   }, []);
-  const filtered = students.filter(student => {
-    const matchesQuery = normalize(`${student.name} ${student.id}`).includes(normalize(query.trim()));
-    const matchesFilter = filter === "Todos" || filter === "Menores" && student.age < 18 || filter === "Activos" && student.status === "Activo" || filter === "Vencidos" && student.status === "Vencido" || filter === "Por vencer" && student.status === "Por vencer";
+
+  const rows = state.status === "ready" ? state.rows : [];
+  const selected = rows.find(row => rowKey(row) === selectedKey) ?? null;
+
+  /** Al validar o rechazar un documento desde el perfil, se actualiza la fila sin volver a consultar todo. */
+  function updateMember(uid: string, patch: Partial<Member>) {
+    setState(current => current.status !== "ready" ? current : {
+      status: "ready",
+      rows: current.rows.map(row => {
+        if (row.kind !== "member" || row.uid !== uid) return row;
+        const record = { ...row.member.record, ...patch };
+        return { ...row, member: { ...row.member, record, documentsValidated: !hasPendingDocuments(record) } };
+      }),
+    });
+  }
+
+  function closeProfile() { profileDialog.current?.close(); }
+  const search = normalize(query.trim());
+  const filtered = rows.filter(row => {
+    const matchesQuery = normalize(`${row.fullName} ${row.email}`).includes(search);
+    const matchesFilter = filter === "Todos"
+      || (filter === "Menores" && isMinor(row))
+      || (filter === "Docs. pendientes" && row.kind === "member" && !row.member.documentsValidated)
+      || (filterStatus[filter] !== undefined && row.kind === "member" && row.member.status === filterStatus[filter])
+      || (filterKind[filter] !== undefined && row.kind === filterKind[filter]);
     return matchesQuery && matchesFilter;
   });
   const visible = filtered.slice(page * pageSize, (page + 1) * pageSize);
-  function register(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const student: Student = { id: crypto.randomUUID(), name: String(data.get("name")).trim(), age: Number(data.get("age")), membership: String(data.get("membership")), status: "Activo", expires: String(data.get("expires")), tone: "rose" };
-    if (!student.name) return;
-    setStudents(current => [...current, student]);
-    setQuery(""); setFilter("Todos"); setPage(Math.floor(students.length / pageSize));
-    setNotice("Alumno agregado a la vista de demostración. Los cambios se conservan mientras esta página esté abierta.");
-    event.currentTarget.reset(); registerDialog.current?.close();
-  }
 
   return <div className="settings-app students-app">
-    <DashboardSidebar active={1} onNotice={setNotice}/>
+    <DashboardSidebar onNotice={setNotice}/>
     <main className="settings-main">
-      <header className="settings-header"><div><h1>Alumnos</h1><p>Listado de inscritos, estados de membresía y registros rápidos.</p></div><button className="settings-save students-register" type="button" onClick={() => registerDialog.current?.showModal()}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M14 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M8 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M19 8v6m-3-3h6"/></svg>+ Registrar alumno</button></header>
+      <header className="settings-header"><div><h1>Alumnos</h1><p>Alumnos inscritos, visitas y clases muestra.</p></div><Link className="settings-save students-register" href="/alumnos/registrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M14 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M8 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M19 8v6m-3-3h6"/></svg>+ Registrar alumno</Link></header>
       <div className="settings-content students-content">
         {notice && <div className="settings-notice" role="status">{notice}<button type="button" aria-label="Descartar mensaje" onClick={() => setNotice("")}>×</button></div>}
-        <div className="students-toolbar"><div className="students-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/></svg><input aria-label="Buscar alumno por nombre o ID" type="search" placeholder="Buscar alumno por nombre o ID..." value={query} onChange={event => { setQuery(event.target.value); setPage(0); }}/></div><div className="students-filters" role="group" aria-label="Filtrar alumnos">{filters.map(item => <button key={item} type="button" aria-pressed={filter === item} className={filter === item ? "selected" : ""} onClick={() => { setFilter(item); setPage(0); }}>{item}</button>)}</div></div>
-        <section className="students-table-panel" aria-label="Listado de alumnos"><div className="students-table-scroll"><table className="students-table"><thead><tr>{["Foto", "Nombre completo", "Edad", "Membresía", "Estado", "Vencimiento", "Acciones"].map(title => <th key={title} scope="col">{title}</th>)}</tr></thead><tbody>{visible.map(student => <tr key={student.id}><td><Avatar student={student}/></td><td className="student-name">{student.name}{student.age < 18 ? " (Menor)" : ""}</td><td>{student.age} años</td><td>{student.membership}</td><td><span className={`student-status ${student.status === "Activo" ? "active" : student.status === "Por vencer" ? "expiring" : "expired"}`}>{student.status}</span></td><td><time dateTime={student.expires}>{formatDate(student.expires)}</time></td><td><button type="button" className="student-profile-button" onClick={() => { setSelected(student); profileDialog.current?.showModal(); }}>Ver Perfil</button></td></tr>)}{visible.length === 0 && <tr><td colSpan={7} className="students-empty">No se encontraron alumnos con estos criterios.</td></tr>}</tbody></table></div><footer className="students-table-footer"><p role="status">Mostrando {visible.length} de {filtered.length} alumnos</p><div><button type="button" disabled={page === 0} onClick={() => setPage(page - 1)}>Anterior</button><button type="button" disabled={(page + 1) * pageSize >= filtered.length} onClick={() => setPage(page + 1)}>Siguiente</button></div></footer></section>
+        {state.status === "error" && <div className="settings-notice" role="alert">{state.message}</div>}
+        <div className="students-toolbar"><div className="students-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/></svg><input aria-label="Buscar por nombre o correo" type="search" placeholder="Buscar por nombre o correo..." value={query} onChange={event => { setQuery(event.target.value); setPage(0); }}/></div><div className="students-filters" role="group" aria-label="Filtrar">{filters.map(item => <button key={item} type="button" aria-pressed={filter === item} className={filter === item ? "selected" : ""} onClick={() => { setFilter(item); setPage(0); }}>{item}</button>)}</div></div>
+        <section className="students-table-panel" aria-label="Listado de alumnos, visitas y clases muestra" aria-busy={state.status === "loading"}><div className="students-table-scroll"><table className="students-table"><thead><tr>{["Foto", "Nombre completo", "Edad", "Membresía", "Estado", "Documentos", "Fecha", "Acciones"].map(title => <th key={title} scope="col">{title}</th>)}</tr></thead><tbody>
+          {visible.map(row => {
+            const details = rowDetails(row);
+            const documents = documentStatus(row);
+            return <tr key={rowKey(row)}>
+              <td><Avatar row={row}/></td>
+              <td className="student-name">{row.fullName}{isMinor(row) ? " (Menor)" : ""}</td>
+              <td>{row.kind === "member" && row.member.age !== null ? `${row.member.age} años` : "—"}</td>
+              <td>{details.plan}</td>
+              <td><span className={`student-status ${details.statusClass}`}>{details.status}</span></td>
+              <td>{documents ? <span className={`student-docs ${documents.tone}`} title={documents.detail}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={documents.tone === "done" ? "m5 12 4.5 4.5L19 7" : documents.tone === "rejected" ? "M12 8v5M12 16.5v.5M10.3 3.9 2.6 17.5A2 2 0 0 0 4.3 20.5h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0" : "M12 7v5l3 2M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18"}/></svg>
+                <span>{documents.label}<small>{documents.detail}</small></span>
+              </span> : <span className="student-docs none">—</span>}</td>
+              <td>{details.date ? <><small className="student-date-label">{details.dateLabel}</small><time dateTime={details.date.toISOString()}>{row.kind === "member" ? formatDate(details.date) : formatDateTime(details.date)}</time></> : "—"}</td>
+              <td><button type="button" className="student-profile-button" onClick={() => { setSelectedKey(rowKey(row)); profileDialog.current?.showModal(); }}>Ver Perfil</button></td>
+            </tr>;
+          })}
+          {visible.length === 0 && <tr><td colSpan={8} className="students-empty">{state.status === "loading" ? "Cargando alumnos…" : state.status === "error" ? "No se pudieron cargar los alumnos." : rows.length === 0 ? "Todavía no hay registros." : "No se encontraron registros con estos criterios."}</td></tr>}
+        </tbody></table></div><footer className="students-table-footer"><p role="status">Mostrando {visible.length} de {filtered.length} registros</p><div><button type="button" disabled={page === 0} onClick={() => setPage(page - 1)}>Anterior</button><button type="button" disabled={(page + 1) * pageSize >= filtered.length} onClick={() => setPage(page + 1)}>Siguiente</button></div></footer></section>
       </div>
     </main>
-    <dialog ref={profileDialog} className="students-dialog" aria-labelledby="student-profile-title"><h2 id="student-profile-title">Perfil del alumno</h2>{selected && <><Avatar student={selected}/><h3>{selected.name}</h3><dl><dt>ID</dt><dd>{selected.id}</dd><dt>Edad</dt><dd>{selected.age} años{selected.age < 18 ? " · Menor de edad" : ""}</dd><dt>Membresía</dt><dd>{selected.membership}</dd><dt>Estado</dt><dd>{selected.status}</dd><dt>Vencimiento</dt><dd>{formatDate(selected.expires)}</dd></dl></>}<button className="settings-save" type="button" onClick={() => profileDialog.current?.close()}>Cerrar</button></dialog>
-    <dialog ref={registerDialog} className="students-dialog" aria-labelledby="student-register-title"><h2 id="student-register-title">Registrar alumno</h2><p className="students-demo-note">Registro de demostración; todavía no se guarda en Firebase.</p><form onSubmit={register}><label>Nombre completo<input name="name" required maxLength={120}/></label><label>Edad<input name="age" type="number" required min={1} max={120}/></label><label>Membresía<select name="membership">{["Mensual", "Semanal", "Día", "Anual"].map(item => <option key={item}>{item}</option>)}</select></label><label>Vencimiento<input name="expires" type="date" required/></label><div className="students-dialog-actions"><button type="button" className="settings-outline" onClick={() => registerDialog.current?.close()}>Cancelar</button><button type="submit" className="settings-save">Registrar alumno</button></div></form></dialog>
+    <dialog ref={profileDialog} className="students-dialog profile-dialog" aria-labelledby="student-profile-title" onClose={() => setSelectedKey(null)} onClick={event => { if (event.target === event.currentTarget) closeProfile(); }}>
+      {selected && <StudentProfile row={selected} onClose={closeProfile} onUpdated={patch => updateMember(selected.uid, patch)}/>}
+    </dialog>
   </div>;
 }

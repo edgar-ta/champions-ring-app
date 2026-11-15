@@ -1,7 +1,15 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+import { PAYMENT_TYPE_LABELS } from "@/app/core/models/payment";
+import { firestoreErrorMessage } from "@/app/core/utils/firebase-errors";
+import { formatCurrency, formatDate, formatTime, startOfToday } from "@/app/core/utils/format";
+import { EXPIRING_WINDOW_DAYS, type MemberSummary } from "@/app/features/members/models/member-summary";
+import { firebaseMemberRepository } from "@/app/features/members/repositories/firebase-member-repository";
+import { firebasePaymentRepository } from "@/app/features/payments/repositories/firebase-payment-repository";
+import type { ApprovedPayment } from "@/app/features/payments/repositories/payment-repository";
 import { DashboardSidebar } from "../components/dashboard-sidebar";
 
 const icons = {
@@ -19,41 +27,85 @@ function DashboardIcon({ name }: { name: keyof typeof icons }) {
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={icons[name]}/></svg>;
 }
 
-// Reference values for the UI; replace with reception data when its repository is available.
-const metrics = [
-  { label: "Alumnos activos", value: "348", icon: "students", tone: "green" },
-  { label: "Membresías por vencer", value: "14", icon: "expiry", tone: "amber" },
-  { label: "Pagos del día", value: "$4,850.00", icon: "money", tone: "pink" },
-  { label: "Ventas del día", value: "$2,100.00", icon: "cart", tone: "pink" },
-] as const;
 const actions = [
   { label: "Registrar alumno", icon: "register" },
   { label: "Registrar pago", icon: "payment" },
   { label: "Buscar alumno", icon: "search" },
   { label: "Nueva venta", icon: "sale" },
 ] as const;
-const activity = [
-  { title: "Acceso concedido", description: "Carlos Mendoza (ID: #3841) - Membresía Mensual", time: "09:42 AM", dateTime: "09:42", tone: "green" },
-  { title: "Pago registrado", description: "Regina Soto pagó $950.00 (Efectivo) - Membresía Mensual", time: "09:35 AM", dateTime: "09:35", tone: "pink" },
-  { title: "Acceso denegado", description: "Mario Ortiz (ID: #1092) - Membresía vencida hace 4 días", time: "09:12 AM", dateTime: "09:12", tone: "red" },
-  { title: "Nuevo alumno registrado", description: "Sofía Martínez (Menor) - Tutor asignado: Andrea Silva", time: "08:50 AM", dateTime: "08:50", tone: "green" },
-];
+
+/** Días hacia atrás que cubre la actividad reciente. */
+const ACTIVITY_DAYS = 7;
+const ACTIVITY_LIMIT = 8;
+
+type Activity = { key: string; title: string; description: string; date: Date; tone: "green" | "pink" };
+
+type DashboardData = { members: MemberSummary[]; payments: ApprovedPayment[] };
+type LoadState = { status: "loading" } | { status: "error"; message: string } | { status: "ready"; data: DashboardData };
+
+function recentActivity({ members, payments }: DashboardData, since: Date): Activity[] {
+  const events: Activity[] = [
+    ...payments.map(payment => ({
+      key: `payment-${payment.uid}`,
+      title: "Pago registrado",
+      description: `${payment.payerName ?? "Cliente sin nombre"} pagó ${formatCurrency(payment.amount)} (${PAYMENT_TYPE_LABELS[payment.type] ?? payment.type})`,
+      date: payment.approvalDate,
+      tone: "pink" as const,
+    })),
+    ...members.filter(member => member.creationDate && member.creationDate >= since).map(member => ({
+      key: `member-${member.uid}`,
+      title: "Nuevo alumno registrado",
+      description: `${member.fullName}${member.age !== null && member.age < 18 ? ` (Menor)${member.guardianName ? ` - Tutor: ${member.guardianName}` : ""}` : ""}`,
+      date: member.creationDate!,
+      tone: "green" as const,
+    })),
+  ];
+  return events.sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, ACTIVITY_LIMIT);
+}
 
 export function ReceptionDashboard() {
   const router = useRouter();
   const [notice, setNotice] = useState("");
+  const [state, setState] = useState<LoadState>({ status: "loading" });
+  const [activitySince] = useState(() => { const date = startOfToday(); date.setDate(date.getDate() - (ACTIVITY_DAYS - 1)); return date; });
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([firebaseMemberRepository.listMembers(), firebasePaymentRepository.listApprovedSince(activitySince)])
+      .then(([members, payments]) => { if (active) setState({ status: "ready", data: { members, payments } }); })
+      .catch(error => { console.error(error); if (active) setState({ status: "error", message: firestoreErrorMessage(error, "cargar el resumen del día") }); });
+    return () => { active = false; };
+  }, [activitySince]);
+
+  const data = state.status === "ready" ? state.data : null;
+  const today = startOfToday();
+  const todaysPayments = data?.payments.filter(payment => payment.approvalDate >= today) ?? [];
+  const metrics = [
+    { label: "Alumnos activos", value: data ? String(data.members.filter(member => member.status === "active" || member.status === "expiring").length) : "…", icon: "students", tone: "green" },
+    { label: `Membresías por vencer (${EXPIRING_WINDOW_DAYS} días)`, value: data ? String(data.members.filter(member => member.status === "expiring").length) : "…", icon: "expiry", tone: "amber" },
+    { label: "Pagos del día", value: data ? formatCurrency(todaysPayments.reduce((total, payment) => total + payment.amount, 0)) : "…", icon: "money", tone: "pink" },
+    // El Modelo de Datos v20.0.0 todavía no tiene una colección de ventas.
+    { label: "Ventas del día", value: "—", icon: "cart", tone: "pink" },
+  ] as const;
+  const activity = data ? recentActivity(data, activitySince) : [];
+
   return <div className="settings-app reception-app">
-    <DashboardSidebar active={0} onNotice={setNotice}/>
+    <DashboardSidebar onNotice={setNotice}/>
     <main className="settings-main">
-      <header className="settings-header"><div><h1>Panel de recepción</h1><p>Resumen de actividad diaria y accesos del gimnasio.</p></div></header>
+      <header className="settings-header"><div><h1>Panel de recepción</h1><p>Resumen de actividad diaria del gimnasio.</p></div></header>
       <div className="settings-content reception-content">
         {notice && <div className="settings-notice" role="status" aria-live="polite">{notice}<button type="button" aria-label="Descartar mensaje" onClick={() => setNotice("")}>×</button></div>}
-        <section className="reception-metrics" aria-label="Resumen del día">
+        {state.status === "error" && <div className="settings-notice" role="alert">{state.message}</div>}
+        <section className="reception-metrics" aria-label="Resumen del día" aria-busy={state.status === "loading"}>
           {metrics.map(metric => <article className="reception-metric" key={metric.label}><span className={`reception-metric-icon ${metric.tone}`}><DashboardIcon name={metric.icon}/></span><div><h2>{metric.label}</h2><p>{metric.value}</p></div></article>)}
         </section>
         <div className="reception-columns">
-          <section className="reception-actions" aria-labelledby="actions-title"><h2 id="actions-title">Acciones rápidas</h2><div className="reception-action-list">{actions.map(action => <button type="button" key={action.label} className="reception-action" onClick={() => action.icon === "register" ? router.push("/alumnos?registrar=1") : action.icon === "search" ? router.push("/alumnos") : setNotice(`La función «${action.label}» aún no está disponible.`)}><span className={`reception-action-icon ${action.icon === "register" ? "pink" : ""}`}><DashboardIcon name={action.icon}/></span><span>{action.label}</span><svg className="reception-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>)}</div></section>
-          <section className="reception-activity" aria-labelledby="activity-title"><h2 id="activity-title">Actividad reciente</h2><ol className="reception-timeline">{activity.map(item => <li key={item.title}><span className={`reception-dot ${item.tone}`} aria-hidden="true"/><div className="reception-event"><div className="reception-event-heading"><h3>{item.title}</h3><time dateTime={item.dateTime}>{item.time}</time></div><p>{item.description}</p></div></li>)}</ol></section>
+          <section className="reception-actions" aria-labelledby="actions-title"><h2 id="actions-title">Acciones rápidas</h2><div className="reception-action-list">{actions.map(action => <button type="button" key={action.label} className="reception-action" onClick={() => action.icon === "search" ? router.push("/alumnos") : action.icon === "register" ? router.push("/alumnos/registrar") : setNotice(`La función «${action.label}» aún no está disponible.`)}><span className={`reception-action-icon ${action.icon === "register" ? "pink" : ""}`}><DashboardIcon name={action.icon}/></span><span>{action.label}</span><svg className="reception-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>)}</div></section>
+          <section className="reception-activity" aria-labelledby="activity-title"><h2 id="activity-title">Actividad reciente</h2><ol className="reception-timeline">
+            {state.status === "loading" && <li className="reception-empty">Cargando actividad…</li>}
+            {state.status === "ready" && activity.length === 0 && <li className="reception-empty">Sin pagos ni alumnos nuevos en los últimos {ACTIVITY_DAYS} días.</li>}
+            {activity.map(item => <li key={item.key}><span className={`reception-dot ${item.tone}`} aria-hidden="true"/><div className="reception-event"><div className="reception-event-heading"><h3>{item.title}</h3><time dateTime={item.date.toISOString()}>{item.date >= today ? formatTime(item.date) : formatDate(item.date)}</time></div><p>{item.description}</p></div></li>)}
+          </ol></section>
         </div>
       </div>
     </main>
