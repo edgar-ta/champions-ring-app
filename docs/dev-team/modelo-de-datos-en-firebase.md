@@ -1,6 +1,6 @@
 # Modelo de Datos en Firebase
 
-Versión 21.0.0
+Versión 22.0.0
 
 ## Clasificación de Cambios
 - Cambios mayores
@@ -113,7 +113,6 @@ payments
 	-- mercado-pago only
 	checkoutUrl: string?
 	status: ("approved" | "rejected")?
-	mercadoPagoPaymentId: string?
 	preferenceId: string?
 
 	// Cobro automático (solo lo escriben las Cloud Functions)
@@ -145,6 +144,15 @@ subscriptions // una por cada autorización de cobro automático
 	checkoutUrl: string
 	nextPaymentAt: timestamp?
 	createdAt: timestamp
+
+purchases
+	uid: string
+
+	items/
+		uid: string
+		numberOfProducts: number
+		productRef: reference
+		individualPrice: number
 ```
 
 Cada cobro automático aprobado se registra también en `payments` con
