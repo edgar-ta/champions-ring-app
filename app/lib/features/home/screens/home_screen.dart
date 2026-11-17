@@ -1,14 +1,12 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../../../core/firebase/firestore_instance.dart';
+import '../models/home_dashboard_data.dart';
+import '../repositories/home_repository.dart';
 import '../../login/screens/login_screen.dart';
 import './profile_screen.dart';
 import './documents_screen.dart';
-import '../widgets/logout_button.dart';
 import '../widgets/membership_status_view.dart';
-import '../widgets/status_card.dart' show kGris;
 
 const Color _rojo = Color(0xFFEA3A3F);
 const Color _fondo = Color(0xFFF5F5F5);
@@ -16,13 +14,18 @@ const Color _texto = Color(0xFF222222);
 const Color _gris = Color(0xFF6B6B6B);
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final HomeRepository? repository;
+
+  const HomeScreen({super.key, this.repository});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  late final HomeRepository _repository;
+  String? _dashboardUid;
+  Stream<HomeDashboardData?>? _dashboardStream;
   int _selectedIndex = 0;
 
   final List<_MenuOption> _options = const [
@@ -53,6 +56,20 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _repository = widget.repository ?? HomeRepository();
+  }
+
+  Stream<HomeDashboardData?> _dashboardFor(String uid) {
+    if (_dashboardUid != uid) {
+      _dashboardUid = uid;
+      _dashboardStream = _repository.watchDashboard(uid);
+    }
+    return _dashboardStream!;
+  }
+
   Future<void> _cerrarSesion() async {
     await FirebaseAuth.instance.signOut();
 
@@ -71,10 +88,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
-
-    final userDocument = user == null
-        ? null
-        : FirestoreInstance.instance.collection('users').doc(user.uid);
+    final uid = user?.uid;
+    final dashboardStream = uid == null ? null : _dashboardFor(uid);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -124,12 +139,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 if (isDesktop)
                   SizedBox(width: 265, child: _buildSidebar(user?.email ?? '')),
                 Expanded(
-                  child: userDocument == null
+                  child: dashboardStream == null
                       ? const Center(
                           child: Text('Inicia sesión para continuar.'),
                         )
-                      : StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-                          stream: userDocument.snapshots(),
+                      : StreamBuilder<HomeDashboardData?>(
+                          stream: dashboardStream,
                           builder: (context, snapshot) {
                             if (snapshot.hasError) {
                               return const Center(
@@ -139,17 +154,25 @@ class _HomeScreenState extends State<HomeScreen> {
                               );
                             }
 
-                            if (!snapshot.hasData) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
                               return const Center(
                                 child: CircularProgressIndicator(),
                               );
                             }
 
-                            final data = snapshot.data?.data() ?? {};
+                            final data = snapshot.data;
+                            if (data == null) {
+                              return const Center(
+                                child: Text(
+                                  'No encontramos la información de tu cuenta.',
+                                ),
+                              );
+                            }
 
                             return _buildContent(
                               data: data,
-                              email: user?.email ?? '',
+                              uid: uid!,
                               isDesktop: isDesktop,
                             );
                           },
@@ -309,15 +332,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildContent({
-    required Map<String, dynamic> data,
-    required String email,
+    required HomeDashboardData data,
+    required String uid,
     required bool isDesktop,
   }) {
     switch (_selectedIndex) {
       case 0:
         return _DashboardContent(
           data: data,
-          email: email,
+          uid: uid,
           isDesktop: isDesktop,
           onNavigate: _seleccionarOpcion,
         );
@@ -351,27 +374,39 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _DashboardContent extends StatelessWidget {
-  final Map<String, dynamic> data;
-  final String email;
+  final HomeDashboardData data;
+  final String uid;
   final bool isDesktop;
   final ValueChanged<int> onNavigate;
 
   const _DashboardContent({
     required this.data,
-    required this.email,
+    required this.uid,
     required this.isDesktop,
     required this.onNavigate,
   });
 
   @override
   Widget build(BuildContext context) {
-    final name = [
-      data['name']?.toString() ?? '',
-      data['last_name']?.toString() ?? '',
-    ].where((part) => part.isNotEmpty).join(' ');
-
-    final photoUrl = data['photo_url']?.toString() ?? '';
-    final registrationPayed = data['registration_payed'] == true;
+    final name = '${data.name} ${data.lastName}'.trim();
+    final photoUrl = data.photoUrl;
+    final registrationPaid = data.inscriptionPaid;
+    final registrationColor = registrationPaid == null
+        ? _gris
+        : registrationPaid
+        ? const Color(0xFF20864B)
+        : _rojo;
+    final registrationTitle = switch (registrationPaid) {
+      true => 'Inscripción pagada',
+      false => 'Inscripción pendiente de pago',
+      null => 'Perfil de miembro no encontrado',
+    };
+    final registrationDescription = switch (registrationPaid) {
+      true => 'Tu inscripción aparece como pagada.',
+      false =>
+        'Consulta con recepción el estado de tu pago para confirmar tu acceso.',
+      null => 'No encontramos los datos de tu inscripción como miembro.',
+    };
 
     return SingleChildScrollView(
       padding: EdgeInsets.all(isDesktop ? 32 : 18),
@@ -408,10 +443,10 @@ class _DashboardContent extends StatelessWidget {
                     CircleAvatar(
                       radius: isDesktop ? 34 : 28,
                       backgroundColor: const Color(0xFFFFE8E9),
-                      backgroundImage: photoUrl.isNotEmpty
+                      backgroundImage: photoUrl != null && photoUrl.isNotEmpty
                           ? NetworkImage(photoUrl)
                           : null,
-                      child: photoUrl.isEmpty
+                      child: photoUrl == null || photoUrl.isEmpty
                           ? const Icon(Icons.person, color: _rojo, size: 32)
                           : null,
                     ),
@@ -421,7 +456,7 @@ class _DashboardContent extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            '¡Hola, boxeador!',
+                            '¡Hola!',
                             style: TextStyle(color: _gris, fontSize: 13),
                           ),
                           const SizedBox(height: 4),
@@ -434,7 +469,7 @@ class _DashboardContent extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            email,
+                            data.email,
                             style: const TextStyle(color: _gris, fontSize: 12),
                           ),
                         ],
@@ -447,11 +482,9 @@ class _DashboardContent extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: registrationPayed
-                      ? const Color(0xFFF0FAF4)
-                      : const Color(0xFFFFF4F4),
+                  color: registrationColor.withValues(alpha: 0.06),
                   border: Border.all(
-                    color: registrationPayed ? const Color(0xFFB8E6CA) : _rojo,
+                    color: registrationColor.withValues(alpha: 0.35),
                   ),
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -459,12 +492,12 @@ class _DashboardContent extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Icon(
-                      registrationPayed
+                      registrationPaid == true
                           ? Icons.check_circle_outline
-                          : Icons.info_outline,
-                      color: registrationPayed
-                          ? const Color(0xFF20864B)
-                          : _rojo,
+                          : registrationPaid == false
+                          ? Icons.info_outline
+                          : Icons.person_off_outlined,
+                      color: registrationColor,
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -472,19 +505,16 @@ class _DashboardContent extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            registrationPayed
-                                ? 'Registro pagado'
-                                : 'Registro pendiente de pago',
-                            style: const TextStyle(
+                            registrationTitle,
+                            style: TextStyle(
                               fontWeight: FontWeight.w800,
                               fontSize: 15,
+                              color: registrationColor,
                             ),
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            registrationPayed
-                                ? 'Tu registro aparece como pagado.'
-                                : 'Consulta con recepción el estado de tu pago para confirmar tu acceso.',
+                            registrationDescription,
                             style: const TextStyle(fontSize: 13, color: _gris),
                           ),
                         ],
@@ -493,6 +523,8 @@ class _DashboardContent extends StatelessWidget {
                   ],
                 ),
               ),
+              const SizedBox(height: 28),
+              MembershipStatusView(uid: uid),
               const SizedBox(height: 28),
               const Text(
                 'Accesos rápidos',
@@ -534,10 +566,6 @@ class _DashboardContent extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 16),
-              TextButton(
-                onPressed: () => throw Exception(),
-                child: const Text('Throw Test Exception'),
-              ),
             ],
           ),
         ),

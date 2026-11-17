@@ -13,10 +13,13 @@ import 'package:champions_ring_app/core/repositories/core_membership_plan_reposi
 import 'package:champions_ring_app/core/repositories/core_payment_repository.dart';
 import 'package:champions_ring_app/core/repositories/core_renewal_repository.dart';
 import 'package:champions_ring_app/core/services/member_storage_service.dart';
+import 'package:champions_ring_app/core/services/mercado_pago_checkout_service.dart';
+import 'package:champions_ring_app/core/utils/constants.dart';
 import 'package:champions_ring_app/core/utils/result.dart';
 import 'package:champions_ring_app/features/inscription/models/member_inscription_data.dart';
 import 'package:champions_ring_app/features/inscription/models/payment.dart';
 import 'package:champions_ring_app/features/inscription/services/liability_waiver_pdf.dart';
+import 'package:champions_ring_app/shared/models/simple_item.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -89,9 +92,10 @@ class InscriptionService {
     return null;
   }
 
-  Future<Result<MemberInscriptionError, String>> signIn(
-    MemberInscriptionData data,
-  ) async {
+  Future<
+    Result<MemberInscriptionError, (String clientUid, String? checkoutUrl)>
+  >
+  signIn(MemberInscriptionData data) async {
     final validationError = _validateMemberInscriptionData(data);
     if (validationError != null) {
       return Error(errorType: validationError);
@@ -124,6 +128,18 @@ class InscriptionService {
       }
       user = authenticatedUser;
 
+      final uid = authenticatedUser.uid;
+      final coreClient = CoreClient(
+        uid: uid,
+        name: personal.name,
+        lastName: personal.lastName,
+        email: personal.email,
+        creationDate: CoreDate.ofWriteTime(),
+      );
+      await CoreClientRepository()
+          .upsert(coreClient)
+          .timeout(const Duration(seconds: 15));
+
       final storage = MemberStorageService(memberId: authenticatedUser.uid);
       final photoUrl = await _uploadUrl(
         storage.uploadProfilePicture(personal.photoBytes, personal.photoFormat),
@@ -144,25 +160,13 @@ class InscriptionService {
             )
           : null;
 
-      final uid = authenticatedUser.uid;
-      final coreClient = CoreClient(
-        uid: uid,
-        name: personal.name,
-        lastName: personal.lastName,
-        email: personal.email,
-        creationDate: CoreDate.ofWriteTime(),
-      );
-      await CoreClientRepository()
-          .upsert(coreClient)
-          .timeout(const Duration(seconds: 15));
-
       final coreMember = CoreMember(
         uid: uid,
         birthDate: CoreDate.fromDateTime(personal.birthDate),
         phone: personal.phone,
         photoUrl: photoUrl,
         legalDataAreTheirs: personal.isOfLegalAge,
-        inscriptionPayed: false,
+        inscriptionPaid: false,
         membershipPlanRef: membershipPlanRepository.myCollection.doc(
           selectedPlan.uid,
         ),
@@ -184,6 +188,7 @@ class InscriptionService {
           .upsert(coreMember)
           .timeout(const Duration(seconds: 15));
 
+      String? checkoutUrl;
       if (!previousInscription.previouslySignedIn) {
         CorePaymentRepository paymentRepository = CorePaymentRepository();
         String paymentUid = paymentRepository.nextUid;
@@ -192,7 +197,7 @@ class InscriptionService {
           case CorePaymentType.cash:
             final cashPayment = CashPayment(
               uid: paymentUid,
-              amount: selectedPlan.cost,
+              amount: selectedPlan.cost + INSCRIPTION_FEE,
               currency: CorePaymentCurrency.mxn,
               payerRef: CoreClientRepository().myCollection.doc(uid),
               creationDate: CoreDate.ofWriteTime(),
@@ -205,7 +210,7 @@ class InscriptionService {
             final paymentSelection = data.paymentSelectionData!;
             final directTransferPayment = DirectTransferPayment(
               uid: paymentUid,
-              amount: selectedPlan.cost,
+              amount: selectedPlan.cost + INSCRIPTION_FEE,
               currency: CorePaymentCurrency.mxn,
               referenceId: paymentSelection.referenceId!.trim(),
               issuingEntity: paymentSelection.issuingEntity!,
@@ -222,15 +227,37 @@ class InscriptionService {
                 .timeout(const Duration(seconds: 15));
             break;
           case CorePaymentType.mercadoPago:
+            checkoutUrl =
+                await MercadoPagoCheckoutService.createPaymentCheckout(
+                  [
+                    SimpleItem(
+                      uid: "inscription",
+                      productId: "inscription",
+                      title: "Inscripción al gimnasio Champion's Ring",
+                      quantity: 1,
+                      unitPrice: INSCRIPTION_FEE as double,
+                    ),
+                    SimpleItem(
+                      uid: "membership-plan",
+                      productId: selectedPlan.uid,
+                      title: selectedPlan.name,
+                      quantity: 1,
+                      unitPrice: selectedPlan.cost,
+                    ),
+                  ],
+                  paymentUid: paymentUid,
+                  clientUid: uid,
+                );
             break;
         }
         CoreRenewalRepository renewalRepository = CoreRenewalRepository(
           memberUid: uid,
         );
+        final renewalUid = renewalRepository.nextUid;
         await renewalRepository
             .upsert(
               CoreRenewal(
-                uid: renewalRepository.nextUid,
+                uid: renewalUid,
                 startDate: CoreDate.ofWriteTime(),
                 endDate: CoreDate.ofServerControlledDate(),
                 membershipPlanRef: membershipPlanRepository.myCollection.doc(
@@ -243,8 +270,7 @@ class InscriptionService {
             )
             .timeout(const Duration(seconds: 15));
       }
-
-      return Success(result: uid);
+      return Success(result: (uid, checkoutUrl));
     } on _UploadFailure catch (failure) {
       await _deleteCreatedUser(user);
       return Error(errorType: failure.error, exception: failure.cause);

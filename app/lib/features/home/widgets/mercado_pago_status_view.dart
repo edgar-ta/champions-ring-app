@@ -1,6 +1,6 @@
+import 'package:champions_ring_app/core/models/core_membership_plan.dart';
 import 'package:flutter/material.dart';
 
-import '../../inscription/models/membership_plan.dart';
 import '../services/membership_service.dart';
 import 'pay_button.dart';
 import 'status_card.dart';
@@ -9,7 +9,7 @@ import 'status_card.dart';
 /// muestra el estado de su pago más reciente.
 class MercadoPagoStatusView extends StatelessWidget {
   final String uid;
-  final MembershipPlan plan;
+  final CoreMembershipPlan plan;
   final bool vencida;
   final List<(String, String)> filasPlan;
   final MembershipService service;
@@ -54,7 +54,7 @@ class MercadoPagoStatusView extends StatelessWidget {
             'ningún cargo. Puedes intentarlo de nuevo o pagar '
             'en recepción.',
         filas: filasPlan,
-        accion: PayButton(planId: plan.id, texto: 'REINTENTAR PAGO'),
+        accion: PayButton(planUid: plan.uid, texto: 'REINTENTAR PAGO'),
       ),
       // Sin pago en curso: nunca pagó, falló al crear el checkout,
       // o su último pago ya se usó en una membresía que venció.
@@ -68,7 +68,7 @@ class MercadoPagoStatusView extends StatelessWidget {
                   'recibimos tu pago.',
         filas: filasPlan,
         accion: PayButton(
-          planId: plan.id,
+          planUid: plan.uid,
           texto: vencida ? 'RENOVAR CON MERCADO PAGO' : 'REINTENTAR PAGO',
         ),
       ),

@@ -1,10 +1,8 @@
+import 'package:champions_ring_app/features/home/models/viewable_membership.dart';
 import 'package:flutter/material.dart';
 
-import '../models/user_membership.dart';
 import '../services/membership_service.dart';
 import '../utils/membership_formatters.dart';
-import 'auto_renew_section.dart';
-import 'mercado_pago_status_view.dart';
 import 'status_card.dart';
 
 /// Decide qué tarjeta mostrar según el estado de la membresía del usuario.
@@ -49,7 +47,6 @@ class MembershipStatusView extends StatelessWidget {
   );
 
   Widget _buildFor(UserMembership membership) {
-    final plan = membership.plan;
     final vencimiento = membership.expiresAt;
 
     if (membership.isActive) {
@@ -59,79 +56,39 @@ class MembershipStatusView extends StatelessWidget {
         titulo: 'Membresía activa',
         descripcion: 'Tu pago fue confirmado.',
         filas: [
-          if (plan != null) ('Plan', plan.title),
-          if (plan != null) ('Duración', duracionTexto(plan.durationDays)),
           ('Vence el', formatearFecha(vencimiento!)),
           (
             'Tiempo restante',
             tiempoRestante(vencimiento.difference(DateTime.now())),
           ),
-          ('Inscripción', membership.registrationPaid ? 'Pagada' : 'No aplica'),
         ],
-        accion: membership.paysWithMercadoPago && membership.canAutoRenew
-            ? AutoRenewSection(membership: membership)
-            : null,
       );
     }
 
-    // Venció mientras Mercado Pago reintenta el cobro automático: no se
-    // ofrece pagar a mano para no cobrar dos veces.
-    if (membership.autoRenewActive && membership.canAutoRenew) {
-      return StatusCard(
-        color: kAmbar,
-        icono: Icons.autorenew,
-        titulo: 'Renovación en proceso',
-        descripcion:
-            'Mercado Pago está procesando el cobro automático de tu plan. '
-            'Tu membresía se renovará en cuanto se apruebe.',
-        filas: [
-          if (vencimiento != null) ('Venció el', formatearFecha(vencimiento)),
-          ('Plan', plan!.title),
-        ],
-        accion: AutoRenewSection(membership: membership),
-      );
-    }
-
-    if (!membership.hasPlan) {
+    if (!membership.hasPaidRenewal) {
       return StatusCard(
         color: kGris,
         icono: Icons.info_outline,
-        titulo: membership.isExpired ? 'Membresía vencida' : 'Sin membresía',
-        descripcion: membership.isExpired
-            ? 'Tu membresía venció el ${formatearFecha(vencimiento!)}.'
-            : 'No seleccionaste un plan. Puedes contratarlo en recepción.',
+        titulo: 'Sin membresía',
+        descripcion: 'No encontramos una renovación con pago confirmado.',
       );
     }
 
-    final filasPlan = [
-      if (membership.isExpired)
-        ('Membresía anterior', 'Venció el ${formatearFecha(vencimiento!)}'),
-      ('Plan', plan!.title),
-      ('Duración', duracionTexto(plan.durationDays)),
-      (
-        'Si se activa hoy, vence el',
-        formatearFecha(DateTime.now().add(Duration(days: plan.durationDays))),
-      ),
-    ];
-
-    if (membership.paysWithMercadoPago) {
-      return MercadoPagoStatusView(
-        uid: uid,
-        plan: plan,
-        vencida: membership.isExpired,
-        filasPlan: filasPlan,
-        service: service,
+    if (vencimiento == null) {
+      return const StatusCard(
+        color: kRojo,
+        icono: Icons.error_outline,
+        titulo: 'No se pudo determinar el vencimiento',
+        descripcion: 'Revisa tu conexión e inténtalo de nuevo.',
       );
     }
 
     return StatusCard(
-      color: kAmbar,
-      icono: Icons.storefront_outlined,
-      titulo: 'Pendiente de pago en recepción',
-      descripcion:
-          'Elegiste pagar en mostrador. Tu membresía se '
-          'activará cuando recepción registre tu pago.',
-      filas: filasPlan,
+      color: kGris,
+      icono: Icons.event_busy,
+      titulo: 'Membresía vencida',
+      descripcion: 'Tu membresía venció el ${formatearFecha(vencimiento)}.',
+      filas: [('Vencimiento', formatearFecha(vencimiento))],
     );
   }
 }

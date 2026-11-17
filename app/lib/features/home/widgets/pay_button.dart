@@ -6,10 +6,10 @@ import '../../inscription/widgets/registration_scaffold.dart' show RedButton;
 
 /// Crea un checkout nuevo (o reutiliza uno reciente) y abre Mercado Pago.
 class PayButton extends StatefulWidget {
-  final int planId;
+  final String planUid;
   final String texto;
 
-  const PayButton({super.key, required this.planId, required this.texto});
+  const PayButton({super.key, required this.planUid, required this.texto});
 
   @override
   State<PayButton> createState() => _PayButtonState();
@@ -22,7 +22,7 @@ class _PayButtonState extends State<PayButton> {
     setState(() => _cargando = true);
     String? error;
     try {
-      await MercadoPagoCheckoutService.open(widget.planId);
+      await MercadoPagoCheckoutService.open(widget.planUid);
     } on FirebaseFunctionsException catch (e) {
       error = e.message ?? e.code;
     } catch (e) {

@@ -1,4 +1,5 @@
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:champions_ring_app/shared/models/simple_item.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Crea el checkout en el servidor (createMembershipCheckout) y lo abre
@@ -13,9 +14,32 @@ class MercadoPagoCheckoutService {
   static HttpsCallable _callable(String name) =>
       FirebaseFunctions.instanceFor(region: 'us-central1').httpsCallable(name);
 
+  /// Crea un checkout para los artículos y devuelve su URL.
+  static Future<String> createPaymentCheckout(
+    List<SimpleItem> simpleItems, {
+    required String paymentUid,
+    String? clientUid,
+  }) async {
+    final response = await _callable('createPaymentCheckout')
+        .call<Map<String, dynamic>>({
+          'paymentUid': paymentUid,
+          'simpleItems': simpleItems.map((item) => item.toJson()).toList(),
+          if (clientUid != null) 'clientUid': clientUid,
+        });
+
+    final checkoutUrl = response.data['checkoutUrl'];
+    if (checkoutUrl is! String || checkoutUrl.isEmpty) {
+      throw Exception('Firebase no devolvió la URL de pago.');
+    }
+
+    return checkoutUrl;
+  }
+
   /// Lanza [FirebaseFunctionsException] si falla el servidor, o
   /// [Exception] si la URL no es válida o no se pudo abrir.
-  static Future<void> open(int membershipPlanId) async {
+  static Future<void> open(String membershipPlanUid) async {
+    int membershipPlanId = 1;
+
     final membershipType = switch (membershipPlanId) {
       1 => 'day',
       2 => 'week',
@@ -28,7 +52,10 @@ class MercadoPagoCheckoutService {
     }
 
     final response = await _callable('createMembershipCheckout')
-        .call<Map<String, dynamic>>({'membershipType': membershipType});
+        .call<Map<String, dynamic>>({
+          'membershipType': membershipType,
+          'membershipPlanUid': membershipPlanUid,
+        });
 
     await _launch(response.data['checkoutUrl'] as String?);
   }
@@ -57,9 +84,8 @@ class MercadoPagoCheckoutService {
   /// Consulta en Mercado Pago el estado del cobro automático y lo guarda en
   /// Firestore (por si el aviso del webhook no llegó). Devuelve el estado.
   static Future<String?> syncSubscription() async {
-    final response = await _callable(
-      'syncMembershipSubscription',
-    ).call<Map<String, dynamic>>();
+    final response = await _callable('syncMembershipSubscription')
+        .call<Map<String, dynamic>>();
     return response.data['status'] as String?;
   }
 

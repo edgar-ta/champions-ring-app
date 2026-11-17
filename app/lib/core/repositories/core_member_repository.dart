@@ -41,6 +41,10 @@ class CoreMemberRepository extends BaseRepository<CoreMember> {
     final birthDate = data['birthDate'] as Timestamp;
     final creationDate = data['creationDate'] as Timestamp;
     final deletionDate = data['deletionDate'] as Timestamp?;
+    final inscriptionPaid = data['inscriptionPaid'] ?? data['inscriptionPayed'];
+    if (inscriptionPaid is! bool) {
+      throw FormatException('El campo "inscriptionPaid" debe ser booleano.');
+    }
 
     return CoreMember(
       uid: data['uid'] as String,
@@ -48,7 +52,7 @@ class CoreMemberRepository extends BaseRepository<CoreMember> {
       phone: data['phone'] as String,
       photoUrl: data['photoUrl'] as String?,
       legalDataAreTheirs: data['legalDataAreTheirs'] as bool,
-      inscriptionPayed: data['inscriptionPayed'] as bool,
+      inscriptionPaid: inscriptionPaid,
       membershipPlanRef:
           data['membershipPlanRef'] as DocumentReference<Map<String, dynamic>>?,
       latestRenewalRef:

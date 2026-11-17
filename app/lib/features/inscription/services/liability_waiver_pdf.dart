@@ -5,17 +5,16 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 import '../models/liability_waiver.dart';
-import '../models/user_inscription_data.dart';
+import '../models/member_inscription_data.dart';
 
 /// Genera la carta responsiva en PDF con los datos del alumno y su firma.
 Future<Uint8List> buildSignedLiabilityWaiverPdf({
-  required UserInscription_PersonalData personal,
+  required MemberInscription_PersonalData personal,
   required Uint8List signatureBytes,
   required DateTime signedAt,
 }) async {
   final logo = pw.MemoryImage(
-    (await rootBundle.load('assets/images/Logo_champions_ring.png'))
-        .buffer
+    (await rootBundle.load('assets/images/Logo_champions_ring.png')).buffer
         .asUint8List(),
   );
   final signature = pw.MemoryImage(signatureBytes);

@@ -3,16 +3,40 @@ import 'package:flutter/material.dart';
 
 import '../../../core/services/mercado_pago_checkout_service.dart';
 import '../../inscription/widgets/registration_scaffold.dart' show RedButton;
-import '../models/user_membership.dart';
 import '../utils/membership_formatters.dart';
 import 'status_card.dart';
+
+class AutoRenewDetails {
+  final int planId;
+  final double planPrice;
+  final int durationDays;
+  final DateTime? expiresAt;
+  final String? subscriptionStatus;
+  final DateTime? subscriptionNextPaymentAt;
+
+  const AutoRenewDetails({
+    required this.planId,
+    required this.planPrice,
+    required this.durationDays,
+    required this.expiresAt,
+    required this.subscriptionStatus,
+    required this.subscriptionNextPaymentAt,
+  });
+
+  bool get isActive => expiresAt?.isAfter(DateTime.now()) == true;
+
+  bool get autoRenewActive =>
+      subscriptionStatus == 'authorized' || subscriptionStatus == 'paused';
+
+  bool get autoRenewPending => subscriptionStatus == 'pending';
+}
 
 /// Activar, continuar o cancelar el cobro automático del plan
 /// (semana o mes). Los estados los escribe el webhook en users/{uid}.
 class AutoRenewSection extends StatefulWidget {
-  final UserMembership membership;
+  final AutoRenewDetails details;
 
-  const AutoRenewSection({super.key, required this.membership});
+  const AutoRenewSection({super.key, required this.details});
 
   @override
   State<AutoRenewSection> createState() => _AutoRenewSectionState();
@@ -26,7 +50,7 @@ class _AutoRenewSectionState extends State<AutoRenewSection> {
     super.initState();
     // Si el alumno ya autorizó pero el webhook no avisó, esto lo corrige
     // en cuanto vuelve a la app (el StreamBuilder mostrará el nuevo estado).
-    if (widget.membership.autoRenewPending) {
+    if (widget.details.autoRenewPending) {
       MercadoPagoCheckoutService.syncSubscription().ignore();
     }
   }
@@ -68,17 +92,14 @@ class _AutoRenewSectionState extends State<AutoRenewSection> {
     }
 
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(error ?? exito)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(error ?? exito)));
   }
 
   Future<void> _activar() => _ejecutar(
-    () => MercadoPagoCheckoutService.openSubscription(
-      widget.membership.plan!.id,
-    ),
+    () => MercadoPagoCheckoutService.openSubscription(widget.details.planId),
     'Autoriza el cobro automático en Mercado Pago. Esta pantalla se '
-        'actualizará cuando se confirme.',
+    'actualizará cuando se confirme.',
   );
 
   Future<void> _cancelar() async {
@@ -112,20 +133,19 @@ class _AutoRenewSectionState extends State<AutoRenewSection> {
 
   @override
   Widget build(BuildContext context) {
-    final membership = widget.membership;
-    final plan = membership.plan!;
-    final proximoCobro = membership.subscriptionNextPaymentAt;
+    final details = widget.details;
+    final proximoCobro = details.subscriptionNextPaymentAt;
 
     final String texto;
     final Widget boton;
 
-    if (membership.autoRenewActive) {
-      texto = membership.subscriptionStatus == 'paused'
+    if (details.autoRenewActive) {
+      texto = details.subscriptionStatus == 'paused'
           ? 'Tu cobro automático está pausado en Mercado Pago.'
           : proximoCobro == null
-          ? 'Activo: se cobrarán \$${plan.price} '
-                '${periodoTexto(plan.durationDays)}.'
-          : 'Activo: el próximo cobro de \$${plan.price} será el '
+          ? 'Activo: se cobrarán \$${details.planPrice} '
+                '${periodoTexto(details.durationDays)}.'
+          : 'Activo: el próximo cobro de \$${details.planPrice} será el '
                 '${formatearFecha(proximoCobro)}.';
       boton = OutlinedButton(
         onPressed: _cancelar,
@@ -136,7 +156,7 @@ class _AutoRenewSectionState extends State<AutoRenewSection> {
         ),
         child: const Text('CANCELAR COBRO AUTOMÁTICO'),
       );
-    } else if (membership.autoRenewPending) {
+    } else if (details.autoRenewPending) {
       texto =
           'Falta autorizar tu tarjeta en Mercado Pago. Si ya lo hiciste, '
           'espera unos segundos.';
@@ -146,14 +166,14 @@ class _AutoRenewSectionState extends State<AutoRenewSection> {
         onPressed: _continuar,
       );
     } else {
-      final vencimiento = membership.expiresAt;
-      texto = membership.isActive && vencimiento != null
-          ? 'Renueva sin hacer nada: se cobrarán \$${plan.price} a tu '
+      final vencimiento = details.expiresAt;
+      texto = details.isActive && vencimiento != null
+          ? 'Renueva sin hacer nada: se cobrarán \$${details.planPrice} a tu '
                 'tarjeta el ${formatearFecha(vencimiento)} y luego '
-                '${periodoTexto(plan.durationDays)}. Puedes cancelar '
+                '${periodoTexto(details.durationDays)}. Puedes cancelar '
                 'cuando quieras.'
-          : 'Se cobrarán \$${plan.price} hoy y luego '
-                '${periodoTexto(plan.durationDays)}. Puedes cancelar '
+          : 'Se cobrarán \$${details.planPrice} hoy y luego '
+                '${periodoTexto(details.durationDays)}. Puedes cancelar '
                 'cuando quieras.';
       boton = RedButton(
         text: 'ACTIVAR COBRO AUTOMÁTICO',

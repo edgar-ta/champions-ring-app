@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/models/core_payment.dart' show CorePaymentType;
 import '../../../core/models/core_membership_plan.dart';
@@ -191,7 +192,12 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
 
       if (!mounted) return;
       switch (result) {
-        case Success<MemberInscriptionError, String>():
+        case Success<
+          MemberInscriptionError,
+          (String clientUid, String? checkoutUrl)
+        >(
+          :final result,
+        ):
           if (_isReturningMember) {
             await showDialog<void>(
               context: context,
@@ -204,40 +210,22 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('ENTENDIDO'),
+                    child: const Text('Entendido'),
                   ),
                 ],
               ),
             );
             if (!mounted) return;
           } else {
-            final payment = _formData.paymentSelectionData!;
-            final plan = _formData.planSelectionData!;
-
-            String? checkoutError;
-
-            if (payment.paymentMethod == CorePaymentType.mercadoPago) {
-              try {
-                await MercadoPagoCheckoutService.open(plan.membershipPlanUid);
-              } on FirebaseFunctionsException catch (e) {
-                checkoutError = e.message ?? e.code;
-                debugPrint(
-                  'Error al crear el checkout: ${e.code} ${e.message}',
-                );
-              } catch (e) {
-                checkoutError = '$e';
-                debugPrint('Error al crear el checkout: $e');
-              }
+            bool? urlLaunched;
+            if (result.$2 != null) {
+              urlLaunched = await launchUrl(Uri.parse(result.$2!));
             }
 
             if (!mounted) return;
-
-            final message = checkoutError != null
-                ? 'Tu cuenta se creó, pero no se pudo abrir el pago '
-                      '($checkoutError). Inicia sesión e intenta pagar nuevamente.'
-                : payment.paymentMethod == CorePaymentType.mercadoPago
-                ? 'Cuenta creada. Completa tu pago en Mercado Pago.'
-                : 'Registro completado. Tu sesión está iniciada.';
+            final message = (urlLaunched != null && !urlLaunched)
+                ? "Cuenta creada. Completa tu pago en Mercado Pago."
+                : "Registro completado. Tu sesión está iniciada.";
 
             ScaffoldMessenger.of(context)
                 .showSnackBar(SnackBar(content: Text(message)));
@@ -246,7 +234,10 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
             MaterialPageRoute(builder: (_) => const HomeScreen()),
             (_) => false,
           );
-        case Error<MemberInscriptionError, String>(
+        case Error<
+          MemberInscriptionError,
+          (String clientUid, String? checkoutUrl)
+        >(
           :final errorType,
           :final exception,
         ):

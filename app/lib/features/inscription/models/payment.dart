@@ -92,7 +92,6 @@ class DirectTransferPayment extends Payment {
 class MercadoPagoPayment extends Payment {
   final String checkoutUrl;
   final CoreMercadoPagoStatus status;
-  final String mercadoPagoPaymentId;
   final String preferenceId;
 
   const MercadoPagoPayment({
@@ -103,7 +102,6 @@ class MercadoPagoPayment extends Payment {
     super.payerRef,
     required this.checkoutUrl,
     required this.status,
-    required this.mercadoPagoPaymentId,
     required this.preferenceId,
     required super.creationDate,
     super.deletionDate,
@@ -118,7 +116,6 @@ class MercadoPagoPayment extends Payment {
     approvalDate: approvalDate,
     checkoutUrl: checkoutUrl,
     mercadoPagoStatus: status,
-    mercadoPagoPaymentId: mercadoPagoPaymentId,
     preferenceId: preferenceId,
     payerRef: payerRef,
     creationDate: creationDate,

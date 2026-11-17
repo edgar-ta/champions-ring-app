@@ -9,7 +9,7 @@ class CoreMember extends FirestoreEntity {
   final String phone;
   final String? photoUrl;
   final bool legalDataAreTheirs;
-  final bool inscriptionPayed;
+  final bool inscriptionPaid;
 
   final DocumentReference<Map<String, dynamic>>? membershipPlanRef;
   final DocumentReference<Map<String, dynamic>>? latestRenewalRef;
@@ -37,7 +37,7 @@ class CoreMember extends FirestoreEntity {
     required this.phone,
     this.photoUrl,
     required this.legalDataAreTheirs,
-    required this.inscriptionPayed,
+    required this.inscriptionPaid,
     this.membershipPlanRef,
     this.latestRenewalRef,
     this.guardianName,
@@ -62,7 +62,7 @@ class CoreMember extends FirestoreEntity {
       'birthDate': birthDate.toFirebaseValue(),
       'phone': phone,
       'legalDataAreTheirs': legalDataAreTheirs,
-      'inscriptionPayed': inscriptionPayed,
+      'inscriptionPaid': inscriptionPaid,
       'ineBackUrl': ineBackUrl,
       'ineBackValidated': ineBackValidated,
       'ineFrontUrl': ineFrontUrl,

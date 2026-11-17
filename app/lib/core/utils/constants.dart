@@ -1,0 +1,1 @@
+final INSCRIPTION_FEE = 120;
