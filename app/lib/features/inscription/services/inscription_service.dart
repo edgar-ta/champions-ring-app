@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:champions_ring_app/core/models/core_date.dart';
 import 'package:champions_ring_app/core/models/core_user.dart';
@@ -7,7 +6,6 @@ import 'package:champions_ring_app/core/firebase/firestore_instance.dart';
 import 'package:champions_ring_app/core/services/user_storage_service.dart';
 import 'package:champions_ring_app/core/utils/result.dart';
 import 'package:champions_ring_app/features/inscription/models/user_inscription_data.dart';
-import 'package:champions_ring_app/features/inscription/services/liability_waiver_pdf.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -21,9 +19,6 @@ enum UserInscriptionError {
   ineFrontUploadFailed('No se pudo subir el anverso de la INE.'),
   ineBackUploadFailed('No se pudo subir el reverso de la INE.'),
   curpUploadFailed('No se pudo subir el CURP del usuario.'),
-  signatureUploadFailed('No se pudo subir la firma de la responsiva.'),
-  waiverGenerationFailed('No se pudo generar la carta responsiva firmada.'),
-  waiverUploadFailed('No se pudo subir la carta responsiva firmada.'),
   storageUnauthenticated('La sesión no permite subir archivos.'),
   storageUnauthorized('No hay permisos para subir los archivos.'),
   storageQuotaExceeded('Se agotó la cuota de almacenamiento disponible.'),
@@ -40,15 +35,17 @@ enum UserInscriptionError {
   other('Ocurrió un error inesperado durante el registro.');
 
   final String message;
+
   const UserInscriptionError(this.message);
 }
 
 /// Coordina la creación de la cuenta, la subida de archivos y el perfil Firestore.
 class InscriptionService {
   static InscriptionService? _instance;
+
   static InscriptionService get instance {
     InscriptionService._instance ??= InscriptionService();
-    return InscriptionService._instance!;
+    return _instance!;
   }
 
   Future<Result<UserInscriptionError, String>> signUp(
@@ -56,9 +53,9 @@ class InscriptionService {
   ) async {
     final personal = data.personalData;
     final id = data.idData;
-    final waiver = data.waiverAgreementData;
     final plan = data.planSelectionData;
     final payment = data.paymentSelectionData;
+
     if (personal == null ||
         id == null ||
         id.ineFrontBytes == null ||
@@ -67,61 +64,51 @@ class InscriptionService {
         id.ineBackFormat == null ||
         (!personal.isOfLegalAge &&
             (id.curpBytes == null || id.curpFormat == null)) ||
-        waiver == null ||
         plan == null ||
         payment == null) {
       return Error(errorType: UserInscriptionError.missingInscriptionData);
     }
 
     User? user;
+
     try {
       final credential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(
             email: personal.email,
             password: personal.password,
           );
+
       final authenticatedUser = credential.user;
+
       if (authenticatedUser == null) {
         return Error(errorType: UserInscriptionError.userCreationFailed);
       }
+
       user = authenticatedUser;
 
       final storage = UserStorageService(userId: authenticatedUser.uid);
+
       final photoUrl = await _uploadUrl(
         storage.uploadProfilePicture(personal.photoBytes, personal.photoFormat),
         UserInscriptionError.profilePictureUploadFailed,
       );
+
       final ineFrontUrl = await _uploadUrl(
         storage.uploadIneFront(id.ineFrontBytes!, id.ineFrontFormat!),
         UserInscriptionError.ineFrontUploadFailed,
       );
+
       final ineBackUrl = await _uploadUrl(
         storage.uploadIneBack(id.ineBackBytes!, id.ineBackFormat!),
         UserInscriptionError.ineBackUploadFailed,
       );
+
       final curpUrl = !personal.isOfLegalAge
           ? await _uploadUrl(
               storage.uploadCurp(id.curpBytes!, id.curpFormat!),
               UserInscriptionError.curpUploadFailed,
             )
           : null;
-      final Uint8List waiverPdf;
-      try {
-        waiverPdf = await buildSignedLiabilityWaiverPdf(
-          personal: personal,
-          signatureBytes: waiver.signatureBytes,
-          signedAt: waiver.signedAt,
-        );
-      } catch (exception) {
-        throw _UploadFailure(
-          UserInscriptionError.waiverGenerationFailed,
-          exception is Exception ? exception : Exception(exception.toString()),
-        );
-      }
-      final liabilityWaiverUrl = await _uploadUrl(
-        storage.uploadLiabilityWaiver(waiverPdf),
-        UserInscriptionError.waiverUploadFailed,
-      );
 
       final coreUser = CoreUser(
         birthDate: personal.birthDate,
@@ -144,10 +131,15 @@ class InscriptionService {
         phone: personal.phone,
         photoUrl: photoUrl,
         registrationPayed: false,
-        liabilityWaiverUrl: liabilityWaiverUrl,
+
+        // Se conserva el campo por compatibilidad con CoreUser.
+        // Los registros nuevos ya no generan una responsiva.
+        liabilityWaiverUrl: '',
+
         type: personal.type,
         uid: authenticatedUser.uid,
       );
+
       await FirestoreInstance.instance
           .collection('users')
           .doc(authenticatedUser.uid)
@@ -157,24 +149,29 @@ class InscriptionService {
       return Success(result: authenticatedUser.uid);
     } on _UploadFailure catch (failure) {
       await _deleteCreatedUser(user);
+
       return Error(errorType: failure.error, exception: failure.cause);
     } on FirebaseAuthException catch (exception) {
       await _deleteCreatedUser(user);
+
       return Error(errorType: _mapAuthError(exception), exception: exception);
     } on TimeoutException catch (exception) {
       await _deleteCreatedUser(user);
+
       return Error(
         errorType: UserInscriptionError.firestoreTimeout,
         exception: exception,
       );
     } on FirebaseException catch (exception) {
       await _deleteCreatedUser(user);
+
       return Error(
         errorType: _mapFirestoreError(exception),
         exception: exception,
       );
     } catch (exception) {
       await _deleteCreatedUser(user);
+
       return Error(
         errorType: UserInscriptionError.other,
         exception: exception is Exception
@@ -233,6 +230,7 @@ class InscriptionService {
 
   Future<void> _deleteCreatedUser(User? user) async {
     if (user == null) return;
+
     try {
       await user.delete();
     } catch (_) {

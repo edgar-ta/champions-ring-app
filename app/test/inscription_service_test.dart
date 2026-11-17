@@ -7,8 +7,8 @@ import 'package:champions_ring_app/features/inscription/services/inscription_ser
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('SignupService.signUp', () {
-    final service = SignupService();
+  group('InscriptionService.signUp', () {
+    final service = InscriptionService();
 
     UserInscription_PersonalData personalData({required DateTime birthDate}) =>
         UserInscription_PersonalData(
@@ -38,12 +38,7 @@ void main() {
     }) => UserInscriptionData(
       personalData: personal,
       idData: id ?? completeIdData(),
-      waiverAgreementData: UserInscription_WaiverAgreementData(
-        signatureBytes: Uint8List.fromList([1]),
-      ),
-      planSelectionData: UserInscription_PlanSelectionData(
-        membershipPlanId: 1,
-      ),
+      planSelectionData: UserInscription_PlanSelectionData(membershipPlanId: 1),
       paymentSelectionData:
           payment ??
           UserInscription_PaymentSelectionData(
@@ -66,30 +61,6 @@ void main() {
       );
     });
 
-    test('rechaza si falta la responsiva', () async {
-      // ARRANGE
-      final incompleteData = UserInscriptionData(
-        personalData: personalData(birthDate: DateTime(1990, 1, 1)),
-        idData: completeIdData(),
-        planSelectionData: UserInscription_PlanSelectionData(
-          membershipPlanId: 1,
-        ),
-        paymentSelectionData: UserInscription_PaymentSelectionData(
-          paymentMethod: CorePaymentMethod.cash,
-        ),
-      );
-
-      // ACT
-      final result = await service.signUp(incompleteData);
-
-      // ASSERT
-      expect(result, isA<Error<UserInscriptionError, String>>());
-      expect(
-        (result as Error<UserInscriptionError, String>).errorType,
-        UserInscriptionError.missingInscriptionData,
-      );
-    });
-
     test('rechaza documentos de identidad incompletos', () async {
       // ARRANGE
       final data = UserInscriptionData(
@@ -99,9 +70,6 @@ void main() {
           ineFrontFormat: 'png',
           ineBackBytes: null,
           ineBackFormat: null,
-        ),
-        waiverAgreementData: UserInscription_WaiverAgreementData(
-          signatureBytes: Uint8List.fromList([1]),
         ),
         planSelectionData: UserInscription_PlanSelectionData(
           membershipPlanId: 1,
@@ -147,13 +115,9 @@ void main() {
 
     test('rechaza datos cuando falta la selección de pago', () async {
       // ARRANGE
-      final personal = personalData(birthDate: DateTime(1990, 1, 1));
       final data = UserInscriptionData(
-        personalData: personal,
+        personalData: personalData(birthDate: DateTime(1990, 1, 1)),
         idData: completeIdData(),
-        waiverAgreementData: UserInscription_WaiverAgreementData(
-          signatureBytes: Uint8List.fromList([1]),
-        ),
         planSelectionData: UserInscription_PlanSelectionData(
           membershipPlanId: 1,
         ),

@@ -35,10 +35,12 @@ class UserInscription_PersonalData {
   bool get isOfLegalAge {
     final today = DateTime.now();
     var age = today.year - birthDate.year;
+
     if (today.month < birthDate.month ||
         (today.month == birthDate.month && today.day < birthDate.day)) {
       age--;
     }
+
     return age >= 18;
   }
 }
@@ -77,16 +79,6 @@ class UserInscription_IdData {
   );
 }
 
-class UserInscription_WaiverAgreementData {
-  final Uint8List signatureBytes;
-  final DateTime signedAt;
-
-  UserInscription_WaiverAgreementData({
-    required this.signatureBytes,
-    required this.signedAt,
-  });
-}
-
 class UserInscription_PlanSelectionData {
   final int membershipPlanId;
 
@@ -103,14 +95,12 @@ class UserInscription_PaymentSelectionData {
 class UserInscriptionData {
   final UserInscription_PersonalData? personalData;
   final UserInscription_IdData? idData;
-  final UserInscription_WaiverAgreementData? waiverAgreementData;
   final UserInscription_PlanSelectionData? planSelectionData;
   final UserInscription_PaymentSelectionData? paymentSelectionData;
 
   const UserInscriptionData({
     this.personalData,
     this.idData,
-    this.waiverAgreementData,
     this.planSelectionData,
     this.paymentSelectionData,
   });
@@ -118,19 +108,14 @@ class UserInscriptionData {
   UserInscriptionData copyWith({
     UserInscription_PersonalData? personalData,
     UserInscription_IdData? idData,
-    UserInscription_WaiverAgreementData? waiverAgreementData,
     UserInscription_PlanSelectionData? planSelectionData,
     UserInscription_PaymentSelectionData? paymentSelectionData,
     bool clearIdData = false,
-    bool clearWaiverAgreementData = false,
     bool clearPlanSelectionData = false,
     bool clearPaymentSelectionData = false,
   }) => UserInscriptionData(
     personalData: personalData ?? this.personalData,
     idData: clearIdData ? null : (idData ?? this.idData),
-    waiverAgreementData: clearWaiverAgreementData
-        ? null
-        : (waiverAgreementData ?? this.waiverAgreementData),
     planSelectionData: clearPlanSelectionData
         ? null
         : (planSelectionData ?? this.planSelectionData),

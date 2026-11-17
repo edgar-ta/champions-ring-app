@@ -10,7 +10,6 @@ import 'register_payment_selection_screen.dart';
 import 'register_payment_summary_screen.dart';
 import 'register_personal_data_screen.dart';
 import 'register_plan_selection_screen.dart';
-import 'register_waiver_agreement_screen.dart';
 import '../../home/screens/home_screen.dart';
 
 import 'package:cloud_functions/cloud_functions.dart';
@@ -27,6 +26,7 @@ class InscriptionScreen extends StatefulWidget {
 
 class _InscriptionScreenState extends State<InscriptionScreen> {
   static const _maxDocumentBytes = 20 * 1024 * 1024;
+
   final _pages = PageController();
   late UserInscriptionData _formData;
   int _step = 0;
@@ -45,8 +45,10 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
   }
 
   void _goToStep(int step) {
-    if (step < 0 || step > 5) return;
+    if (step < 0 || step > 4) return;
+
     setState(() => _step = step);
+
     _pages.animateToPage(
       step,
       duration: const Duration(milliseconds: 250),
@@ -64,6 +66,7 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
 
   void _updatePersonalData(UserInscription_PersonalData data) => setState(() {
     final previousPersonalData = _formData.personalData;
+
     final legalAgeStatusChanged =
         previousPersonalData != null &&
         previousPersonalData.isOfLegalAge != data.isOfLegalAge;
@@ -76,12 +79,6 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
 
   void _updateIdData(UserInscription_IdData data) =>
       setState(() => _formData = _formData.copyWith(idData: data));
-
-  void _updateWaiverData(UserInscription_WaiverAgreementData? data) => setState(
-    () => _formData = (data == null
-        ? _formData.copyWith(clearWaiverAgreementData: true)
-        : _formData.copyWith(waiverAgreementData: data)),
-  );
 
   void _updatePlanData(UserInscription_PlanSelectionData data) => setState(
     () => _formData = _formData.copyWith(
@@ -98,9 +95,9 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
   Future<void> _complete() async {
     final personal = _formData.personalData;
     final id = _formData.idData;
-    final waiver = _formData.waiverAgreementData;
     final plan = _formData.planSelectionData;
     final payment = _formData.paymentSelectionData;
+
     if (personal == null ||
         id == null ||
         id.ineFrontBytes == null ||
@@ -109,29 +106,30 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
         id.ineBackFormat == null ||
         (!personal.isOfLegalAge &&
             (id.curpBytes == null || id.curpFormat == null)) ||
-        waiver == null ||
         plan == null ||
         payment == null) {
       _showError('Completa todos los pasos del registro.');
       return;
     }
+
     if (personal.photoBytes.length > 5 * 1024 * 1024) {
       _showError('La foto de perfil no debe superar 5 MB.');
       return;
     }
-    final documentSizes = [
-      if (!personal.isOfLegalAge) id.curpBytes!.length,
-      waiver.signatureBytes.length,
-    ];
+
+    final documentSizes = [if (!personal.isOfLegalAge) id.curpBytes!.length];
+
     if (documentSizes.any((size) => size > _maxDocumentBytes)) {
-      _showError('El CURP y la firma deben pesar como máximo 20 MB cada uno.');
+      _showError('El CURP debe pesar como máximo 20 MB.');
       return;
     }
+
     if (id.ineFrontBytes!.length > 5 * 1024 * 1024 ||
         id.ineBackBytes!.length > 5 * 1024 * 1024) {
       _showError('Cada lado de la INE debe pesar como máximo 5 MB.');
       return;
     }
+
     if (!personal.isOfLegalAge &&
         ((personal.guardianName?.trim().isNotEmpty ?? false) == false ||
             !RegExp(r'^\+(52|1)\d{10}$')
@@ -143,10 +141,12 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
     }
 
     setState(() => _loading = true);
+
     try {
       final result = await InscriptionService.instance.signUp(_formData);
 
       if (!mounted) return;
+
       switch (result) {
         case Success<UserInscriptionError, String>():
           final payment = _formData.paymentSelectionData!;
@@ -184,6 +184,7 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
             MaterialPageRoute(builder: (_) => const HomeScreen()),
             (_) => false,
           );
+
         case Error<UserInscriptionError, String>(:final errorType):
           _showError(errorType.message);
       }
@@ -206,12 +207,13 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
     const names = [
       'Datos personales',
       'Documentos',
-      'Responsiva',
       'Plan de entrenamiento',
       'Resumen de compra',
       'Método de pago',
     ];
+
     final personal = _formData.personalData;
+
     return RegistrationScaffold(
       stepIndex: _step + 1,
       totalSteps: names.length,
@@ -221,7 +223,6 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
       subtitle: const [
         'Introduce tu información para comenzar con tu inscripción al gimnasio.',
         'Sube imágenes claras de los documentos requeridos. Menores de edad: incluye tu CURP.',
-        'Revisa y firma la carta responsiva. Menores de edad: solicitar firma de su tutor legal.',
         'Selecciona la opción de entrenamiento que mejor se adapte a ti.',
         'Revisa los beneficios y el total.',
         'Elige cómo realizarás tu pago.',
@@ -241,6 +242,7 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
                 _goToStep(1);
               },
             ),
+
             if (personal == null)
               const SizedBox.shrink()
             else
@@ -250,20 +252,18 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
                 onDataChanged: _updateIdData,
                 onContinue: () => _goToStep(2),
               ),
-            RegisterWaiverAgreementScreen(
-              data: _formData.waiverAgreementData,
-              onDataChanged: _updateWaiverData,
-              onContinue: () => _goToStep(3),
-            ),
+
             RegisterPlanSelectionScreen(
               data: _formData.planSelectionData,
               onDataChanged: _updatePlanData,
-              onContinue: () => _goToStep(4),
+              onContinue: () => _goToStep(3),
             ),
+
             RegisterPaymentSummaryScreen(
               data: _formData.planSelectionData,
-              onContinue: () => _goToStep(5),
+              onContinue: () => _goToStep(4),
             ),
+
             RegisterPaymentSelectionScreen(
               data: _formData.paymentSelectionData,
               onDataChanged: _updatePaymentData,
