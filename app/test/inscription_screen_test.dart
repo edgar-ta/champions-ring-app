@@ -22,10 +22,16 @@ void main() {
 
     expect(find.text('Paso 2 de 5: Validación de cuenta'), findsOneWidget);
     expect(
-      find.textContaining('dentro de los próximos 4 días'),
+      find.textContaining('dentro de los próximos 3 días'),
       findsOneWidget,
     );
     expect(find.textContaining('será bloqueada'), findsOneWidget);
+    expect(
+      find.image(
+        const AssetImage('assets/images/Gym_Verification_ 3_Days_Waiting.png'),
+      ),
+      findsOneWidget,
+    );
 
     await tester.tap(find.text('CONTINUAR').first);
     await tester.pumpAndSettle();

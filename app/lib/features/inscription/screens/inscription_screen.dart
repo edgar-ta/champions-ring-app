@@ -433,7 +433,7 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
         ? const [
             'Selecciona la opción que mejor responda la siguiente pregunta: ¿ya estás inscrito al gimnasio?',
             'Antes de continuar, toma en cuenta el plazo para validar tu cuenta.',
-            'Como ya te habías inscrito anteriormente, el sistema lo tiene presente. Confirma tus datos para crear tu cuenta.',
+            'Confirma tus datos para crear tu cuenta.',
             'Sube imágenes claras de los documentos requeridos. Menores de edad: incluye tu CURP.',
             'Como ya te habías inscrito anteriormente, el sistema lo tiene presente. Selecciona tu plan de entrenamiento.',
           ]
@@ -461,99 +461,99 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
         physics: const NeverScrollableScrollPhysics(),
         children: _isReturningMember
             ? [
-                  RegisterPreviousInscriptionScreen(
-                    data: _formData.previousInscriptionData,
-                    onDataChanged: _updatePreviousInscriptionData,
-                    onContinue: () => _goToStep(1),
-                    showContinueButton: false,
-                  ),
-                  RegisterAccountValidationNoticeScreen(
-                    onContinue: () => _goToStep(2),
-                    showContinueButton: false,
-                  ),
-                  RegisterPersonalDataScreen(
-                    initialData: personal,
-                    formKey: _personalDataFormKey,
-                    showContinueButton: false,
-                    onChanged: _markPersonalDataChanged,
-                    onContinue: (data) {
-                      _updatePersonalData(data);
-                      _goToStep(3);
-                    },
-                  ),
-                  if (personal == null)
-                    const SizedBox.shrink()
-                  else
-                    RegisterIdScreen(
-                      personalData: personal,
-                      data: _formData.idData,
-                      onDataChanged: _updateIdData,
-                      onContinue: () => _goToStep(4),
-                      showContinueButton: false,
-                    ),
-                  RegisterPlanSelectionScreen(
-                    plans: _membershipPlans,
-                    isLoading: _isLoadingMembershipPlans,
-                    loadError: _membershipPlanLoadError,
-                    onRetry: _loadActiveMembershipPlans,
-                    data: _formData.planSelectionData,
-                    onDataChanged: _updatePlanData,
-                    onContinue: _complete,
-                    showContinueButton: false,
-                  ),
-              ]
-            : [
-                  RegisterPreviousInscriptionScreen(
-                    data: _formData.previousInscriptionData,
-                    onDataChanged: _updatePreviousInscriptionData,
-                    onContinue: () => _goToStep(1),
-                    showContinueButton: false,
-                  ),
-                  RegisterPersonalDataScreen(
-                    initialData: personal,
-                    formKey: _personalDataFormKey,
-                    showContinueButton: false,
-                    onChanged: _markPersonalDataChanged,
-                    onContinue: (data) {
-                      _updatePersonalData(data);
-                      _goToStep(2);
-                    },
-                  ),
-                  if (personal == null)
-                    const SizedBox.shrink()
-                  else
-                    RegisterIdScreen(
-                      personalData: personal,
-                      data: _formData.idData,
-                      onDataChanged: _updateIdData,
-                      onContinue: () => _goToStep(3),
-                      showContinueButton: false,
-                    ),
-                  RegisterPlanSelectionScreen(
-                    plans: _membershipPlans,
-                    isLoading: _isLoadingMembershipPlans,
-                    loadError: _membershipPlanLoadError,
-                    onRetry: _loadActiveMembershipPlans,
-                    data: _formData.planSelectionData,
-                    onDataChanged: _updatePlanData,
+                RegisterPreviousInscriptionScreen(
+                  data: _formData.previousInscriptionData,
+                  onDataChanged: _updatePreviousInscriptionData,
+                  onContinue: () => _goToStep(1),
+                  showContinueButton: false,
+                ),
+                RegisterAccountValidationNoticeScreen(
+                  onContinue: () => _goToStep(2),
+                  showContinueButton: false,
+                ),
+                RegisterPersonalDataScreen(
+                  initialData: personal,
+                  formKey: _personalDataFormKey,
+                  showContinueButton: false,
+                  onChanged: _markPersonalDataChanged,
+                  onContinue: (data) {
+                    _updatePersonalData(data);
+                    _goToStep(3);
+                  },
+                ),
+                if (personal == null)
+                  const SizedBox.shrink()
+                else
+                  RegisterIdScreen(
+                    personalData: personal,
+                    data: _formData.idData,
+                    onDataChanged: _updateIdData,
                     onContinue: () => _goToStep(4),
                     showContinueButton: false,
                   ),
-                  RegisterPaymentSummaryScreen(
-                    plans: _membershipPlans,
-                    isLoading: _isLoadingMembershipPlans,
-                    loadError: _membershipPlanLoadError,
-                    onRetry: _loadActiveMembershipPlans,
-                    data: _formData.planSelectionData,
-                    onContinue: () => _goToStep(5),
+                RegisterPlanSelectionScreen(
+                  plans: _membershipPlans,
+                  isLoading: _isLoadingMembershipPlans,
+                  loadError: _membershipPlanLoadError,
+                  onRetry: _loadActiveMembershipPlans,
+                  data: _formData.planSelectionData,
+                  onDataChanged: _updatePlanData,
+                  onContinue: _complete,
+                  showContinueButton: false,
+                ),
+              ]
+            : [
+                RegisterPreviousInscriptionScreen(
+                  data: _formData.previousInscriptionData,
+                  onDataChanged: _updatePreviousInscriptionData,
+                  onContinue: () => _goToStep(1),
+                  showContinueButton: false,
+                ),
+                RegisterPersonalDataScreen(
+                  initialData: personal,
+                  formKey: _personalDataFormKey,
+                  showContinueButton: false,
+                  onChanged: _markPersonalDataChanged,
+                  onContinue: (data) {
+                    _updatePersonalData(data);
+                    _goToStep(2);
+                  },
+                ),
+                if (personal == null)
+                  const SizedBox.shrink()
+                else
+                  RegisterIdScreen(
+                    personalData: personal,
+                    data: _formData.idData,
+                    onDataChanged: _updateIdData,
+                    onContinue: () => _goToStep(3),
                     showContinueButton: false,
                   ),
-                  RegisterPaymentSelectionScreen(
-                    data: _formData.paymentSelectionData,
-                    onDataChanged: _updatePaymentData,
-                    onContinue: _complete,
-                    showContinueButton: false,
-                  ),
+                RegisterPlanSelectionScreen(
+                  plans: _membershipPlans,
+                  isLoading: _isLoadingMembershipPlans,
+                  loadError: _membershipPlanLoadError,
+                  onRetry: _loadActiveMembershipPlans,
+                  data: _formData.planSelectionData,
+                  onDataChanged: _updatePlanData,
+                  onContinue: () => _goToStep(4),
+                  showContinueButton: false,
+                ),
+                RegisterPaymentSummaryScreen(
+                  plans: _membershipPlans,
+                  isLoading: _isLoadingMembershipPlans,
+                  loadError: _membershipPlanLoadError,
+                  onRetry: _loadActiveMembershipPlans,
+                  data: _formData.planSelectionData,
+                  onContinue: () => _goToStep(5),
+                  showContinueButton: false,
+                ),
+                RegisterPaymentSelectionScreen(
+                  data: _formData.paymentSelectionData,
+                  onDataChanged: _updatePaymentData,
+                  onContinue: _complete,
+                  showContinueButton: false,
+                ),
               ],
       ),
     );
