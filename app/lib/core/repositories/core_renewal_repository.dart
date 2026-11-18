@@ -81,7 +81,10 @@ class CoreRenewalRepository extends BaseRepository<CoreRenewal> {
       }
 
       final renewalSnapshot = await transaction.get(renewalDocument);
-      transaction.set(renewalDocument, renewal.toFirebaseMap());
+      transaction.set(
+        renewalDocument,
+        dataForUpsert(renewal, renewalSnapshot.data()),
+      );
       return !renewalSnapshot.exists;
     });
   }

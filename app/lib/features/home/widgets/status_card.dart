@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-export '../../inscription/widgets/personal_data_form.dart' show kRojo;
+export '../../../shared/ui/colors.dart';
 
 const kGris = Color(0xFF6B6B6B);
 const kVerde = Color(0xFF2E9E5B);

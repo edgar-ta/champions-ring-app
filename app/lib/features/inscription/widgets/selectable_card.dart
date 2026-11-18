@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'personal_data_form.dart' show kRojo;
+import '../../../shared/ui/colors.dart';
 
 class SelectableCard extends StatefulWidget {
   final bool isSelected;

@@ -58,7 +58,10 @@ class CorePaymentRepository extends BaseRepository<CorePayment> {
       }
 
       final paymentSnapshot = await transaction.get(paymentDocument);
-      transaction.set(paymentDocument, payment.toFirebaseMap());
+      transaction.set(
+        paymentDocument,
+        dataForUpsert(payment, paymentSnapshot.data()),
+      );
       return !paymentSnapshot.exists;
     });
   }

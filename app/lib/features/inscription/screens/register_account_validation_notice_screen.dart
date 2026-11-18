@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../shared/ui/text_styles.dart';
-import '../widgets/registration_scaffold.dart';
+import '../../../shared/widgets/red_button.dart';
 
 class RegisterAccountValidationNoticeScreen extends StatelessWidget {
   final VoidCallback onContinue;

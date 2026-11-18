@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-import 'personal_data_form.dart' show kRojo;
+import '../../../shared/ui/colors.dart';
 
 typedef PickedDocument = ({Uint8List bytes, String format});
 
@@ -87,7 +87,11 @@ class _DocumentInputState extends State<DocumentInput> {
     if (!mounted) return;
     if (bytes.length > widget.maxBytes) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('El archivo no debe superar ${widget.maxBytes ~/ (1024 * 1024)} MB.')),
+        SnackBar(
+          content: Text(
+            'El archivo no debe superar ${widget.maxBytes ~/ (1024 * 1024)} MB.',
+          ),
+        ),
       );
       return;
     }

@@ -3,7 +3,7 @@ import 'package:champions_ring_app/core/models/core_payment.dart'
 import 'package:flutter/material.dart';
 
 import '../models/member_inscription_data.dart';
-import '../widgets/registration_scaffold.dart';
+import '../../../shared/widgets/red_button.dart';
 
 /// Paso 6: selección del método de pago.
 class RegisterPaymentSelectionScreen extends StatelessWidget {

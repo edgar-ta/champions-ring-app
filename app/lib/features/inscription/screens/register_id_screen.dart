@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/member_inscription_data.dart';
 import '../widgets/document_input.dart';
-import '../widgets/registration_scaffold.dart';
+import '../../../shared/widgets/red_button.dart';
 
 /// Paso 2: carga la identificación del usuario o de su tutor y, para menores, su CURP.
 class RegisterIdScreen extends StatefulWidget {

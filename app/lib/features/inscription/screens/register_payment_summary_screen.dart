@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/models/core_membership_plan.dart';
 import '../models/member_inscription_data.dart';
-import '../widgets/registration_scaffold.dart';
+import '../../../shared/widgets/red_button.dart';
 
 /// Paso 5: revisa el plan y el importe antes de elegir cómo pagar.
 class RegisterPaymentSummaryScreen extends StatelessWidget {

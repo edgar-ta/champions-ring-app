@@ -2,7 +2,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/services/mercado_pago_checkout_service.dart';
-import '../../inscription/widgets/registration_scaffold.dart' show RedButton;
+import '../../../shared/widgets/red_button.dart';
 
 /// Crea un checkout nuevo (o reutiliza uno reciente) y abre Mercado Pago.
 class PayButton extends StatefulWidget {

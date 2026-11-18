@@ -48,7 +48,10 @@ export class CoreMemberRepository extends BaseRepository<CoreMember> {
       }
 
       const memberSnapshot = await transaction.get(memberDocument);
-      transaction.set(memberDocument, member.toFirestore());
+      transaction.set(
+        memberDocument,
+        this.dataForUpsert(member, memberSnapshot.data())
+      );
       return !memberSnapshot.exists;
     });
   }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../inscription/widgets/personal_data_form.dart' show kRojo;
+import '../../../shared/ui/colors.dart';
 import '../services/auth_service.dart';
 import '../models/login_credentials.dart';
 import 'login_field.dart';

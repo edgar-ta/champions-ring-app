@@ -8,8 +8,8 @@ import 'package:image_picker/image_picker.dart';
 import '../models/member_inscription_data.dart';
 import '../../../shared/widgets/phone_number_input.dart';
 import '../../../shared/ui/text_styles.dart';
+import '../../../shared/ui/colors.dart';
 
-const Color kRojo = Color(0xFFEA3A3F);
 const Color _gris = Color(0xFF6B6B6B);
 final _emailPattern = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
 

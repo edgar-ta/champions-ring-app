@@ -81,7 +81,10 @@ export class CoreRenewalRepository extends BaseRepository<CoreRenewal> {
       }
 
       const renewalSnapshot = await transaction.get(renewalDocument);
-      transaction.set(renewalDocument, renewal.toFirestore());
+      transaction.set(
+        renewalDocument,
+        this.dataForUpsert(renewal, renewalSnapshot.data())
+      );
       return !renewalSnapshot.exists;
     });
   }

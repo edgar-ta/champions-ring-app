@@ -39,14 +39,40 @@ export abstract class BaseRepository<Entity extends FirestoreEntity> {
    * Inserta o reemplaza una entidad dentro de una transacción.
    * @param {Entity} entity Entidad que se guardará.
    * @return {Promise<boolean>} Indica si se creó el documento.
+   * Conserva los campos uid y creationDate del documento existente
+   * al actualizar.
    */
   async upsert(entity: Entity): Promise<boolean> {
     const document = this.collection.doc(entity.uid);
     return this.firestore.runTransaction(async (transaction) => {
       const snapshot = await transaction.get(document);
-      transaction.set(document, entity.toFirestore());
+      transaction.set(
+        document,
+        this.dataForUpsert(entity, snapshot.data())
+      );
       return !snapshot.exists;
     });
+  }
+
+  /**
+   * Builds document data while keeping its original identity and creation time.
+   * @param {Entity} entity Entity to serialize.
+   * @param {DocumentData} existingData Existing document data, if present.
+   * @return {DocumentData} Data to write.
+   */
+  protected dataForUpsert(
+    entity: Entity,
+    existingData?: DocumentData
+  ): DocumentData {
+    const data = {...entity.toFirestore()};
+    if (existingData !== undefined) {
+      for (const field of ["uid", "creationDate"] as const) {
+        if (Object.prototype.hasOwnProperty.call(existingData, field)) {
+          data[field] = existingData[field];
+        }
+      }
+    }
+    return data;
   }
 
   /**

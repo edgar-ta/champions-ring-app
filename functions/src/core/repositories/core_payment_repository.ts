@@ -74,7 +74,10 @@ export class CorePaymentRepository extends BaseRepository<CorePayment> {
         );
       }
 
-      transaction.set(paymentDocument, payment.toFirestore());
+      transaction.set(
+        paymentDocument,
+        this.dataForUpsert(payment, paymentSnapshot.data())
+      );
       return !paymentSnapshot.exists;
     });
   }

@@ -9,6 +9,7 @@ import '../models/member_inscription_data.dart';
 import '../services/inscription_service.dart';
 import '../widgets/personal_data_form.dart' show PersonalDataFormState;
 import '../widgets/registration_scaffold.dart';
+import '../../../shared/widgets/red_button.dart';
 import 'register_account_validation_notice_screen.dart';
 import 'register_id_screen.dart';
 import 'register_payment_selection_screen.dart';
