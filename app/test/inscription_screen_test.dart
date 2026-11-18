@@ -1,4 +1,5 @@
 import 'package:champions_ring_app/features/inscription/screens/inscription_screen.dart';
+import 'package:champions_ring_app/features/inscription/widgets/selectable_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -12,8 +13,9 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(const MaterialApp(home: InscriptionScreen()));
+    await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Sí, ya estoy inscrito al gimnasio'));
+    await tester.tap(find.byType(SelectableCard).first);
     await tester.pump();
     await tester.tap(find.text('CONTINUAR').first);
     await tester.pumpAndSettle();
@@ -39,13 +41,72 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(const MaterialApp(home: InscriptionScreen()));
+    await tester.pumpAndSettle();
 
-    await tester.tap(find.text('No, no estoy inscrito'));
+    await tester.tap(find.byType(SelectableCard).last);
     await tester.pump();
     await tester.tap(find.text('CONTINUAR').first);
     await tester.pumpAndSettle();
 
     expect(find.text('Paso 2 de 6: Datos personales'), findsOneWidget);
     expect(find.text('Validación de cuenta'), findsNothing);
+  });
+
+  testWidgets('bottom back button is only shown after the first step', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const MaterialApp(home: InscriptionScreen()));
+    await tester.pumpAndSettle();
+
+    expect(find.text('REGRESAR'), findsNothing);
+    await tester.tap(find.byType(SelectableCard).last);
+    await tester.pump();
+    await tester.tap(find.text('CONTINUAR'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('REGRESAR'), findsOneWidget);
+    await tester.tap(find.text('REGRESAR'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Paso 1 de 6: Inscripción previa'), findsOneWidget);
+    expect(find.text('REGRESAR'), findsNothing);
+  });
+
+  testWidgets('top back confirms exit after unsaved personal data', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const MaterialApp(home: InscriptionScreen()));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(SelectableCard).last);
+    await tester.pump();
+    await tester.tap(find.text('CONTINUAR'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField).first, 'Ana');
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.chevron_left));
+    await tester.pumpAndSettle();
+
+    expect(find.text('¿Salir del registro?'), findsOneWidget);
+    await tester.tap(find.text('Continuar registrándome'));
+    await tester.pumpAndSettle();
+    expect(find.text('Paso 2 de 6: Datos personales'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.chevron_left));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Salir'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Bienvenido de nuevo'), findsOneWidget);
   });
 }

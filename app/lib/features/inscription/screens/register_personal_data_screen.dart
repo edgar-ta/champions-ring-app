@@ -7,15 +7,27 @@ import '../widgets/personal_data_form.dart';
 class RegisterPersonalDataScreen extends StatelessWidget {
   final MemberInscription_PersonalData? initialData;
   final ValueChanged<MemberInscription_PersonalData> onContinue;
+  final bool showContinueButton;
+  final GlobalKey<PersonalDataFormState>? formKey;
+  final VoidCallback? onChanged;
 
   const RegisterPersonalDataScreen({
     super.key,
     required this.initialData,
     required this.onContinue,
+    this.showContinueButton = true,
+    this.formKey,
+    this.onChanged,
   });
 
   @override
   Widget build(BuildContext context) => SingleChildScrollView(
-    child: PersonalDataForm(initialData: initialData, onSubmit: onContinue),
+    child: PersonalDataForm(
+      key: formKey,
+      initialData: initialData,
+      onSubmit: onContinue,
+      showContinueButton: showContinueButton,
+      onChanged: onChanged,
+    ),
   );
 }

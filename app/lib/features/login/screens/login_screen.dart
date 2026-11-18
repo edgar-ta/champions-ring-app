@@ -60,8 +60,9 @@ class LoginScreen extends StatelessWidget {
                     child: const Text('Throw Test Exception'),
                   ),
                   const SizedBox(height: 28),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       const Text(
                         '¿No tienes una cuenta? ',

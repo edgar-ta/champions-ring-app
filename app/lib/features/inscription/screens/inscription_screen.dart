@@ -4,10 +4,10 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/models/core_payment.dart' show CorePaymentType;
 import '../../../core/models/core_membership_plan.dart';
 import '../../../core/repositories/core_membership_plan_repository.dart';
-import '../../../core/services/mercado_pago_checkout_service.dart';
 import '../../../core/utils/result.dart';
 import '../models/member_inscription_data.dart';
 import '../services/inscription_service.dart';
+import '../widgets/personal_data_form.dart' show PersonalDataFormState;
 import '../widgets/registration_scaffold.dart';
 import 'register_account_validation_notice_screen.dart';
 import 'register_id_screen.dart';
@@ -17,8 +17,7 @@ import 'register_personal_data_screen.dart';
 import 'register_plan_selection_screen.dart';
 import 'register_previous_inscription_screen.dart';
 import '../../home/screens/home_screen.dart';
-
-import 'package:cloud_functions/cloud_functions.dart';
+import '../../login/screens/login_screen.dart';
 
 /// Contenedor del wizard: mantiene los datos de cada paso en UserFormData.
 class InscriptionScreen extends StatefulWidget {
@@ -31,9 +30,11 @@ class InscriptionScreen extends StatefulWidget {
 class _InscriptionScreenState extends State<InscriptionScreen> {
   static const _maxDocumentBytes = 20 * 1024 * 1024;
   final _pages = PageController();
+  final _personalDataFormKey = GlobalKey<PersonalDataFormState>();
   late MemberInscriptionData _formData;
   int _step = 0;
   bool _loading = false;
+  bool _hasEditedPersonalData = false;
   List<CoreMembershipPlan>? _membershipPlans;
   bool _isLoadingMembershipPlans = false;
   Object? _membershipPlanLoadError;
@@ -42,6 +43,70 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
       _formData.previousInscriptionData?.previouslySignedIn == true;
 
   int get _totalSteps => _isReturningMember ? 5 : 6;
+
+  bool get _hasEnteredData =>
+      _hasEditedPersonalData ||
+      _formData.previousInscriptionData != null ||
+      _formData.personalData != null ||
+      _formData.idData != null ||
+      _formData.planSelectionData != null ||
+      _formData.paymentSelectionData != null;
+
+  bool get _hasSelectedAvailablePlan {
+    final selectedPlanUid = _formData.planSelectionData?.membershipPlanUid;
+    return !_isLoadingMembershipPlans &&
+        _membershipPlanLoadError == null &&
+        (_membershipPlans ?? const <CoreMembershipPlan>[]).any(
+          (plan) => plan.uid == selectedPlanUid,
+        );
+  }
+
+  bool get _hasCompleteIdentification {
+    final personal = _formData.personalData;
+    final id = _formData.idData;
+    if (personal == null ||
+        id?.ineFrontBytes == null ||
+        id?.ineBackBytes == null) {
+      return false;
+    }
+    return personal.isOfLegalAge ||
+        (id?.curpBytes != null &&
+            id?.curpFormat != null &&
+            (personal.guardianName?.trim().isNotEmpty ?? false) &&
+            RegExp(r'^\+(52|1)\d{10}$')
+                .hasMatch(personal.guardianPhone ?? '') &&
+            (personal.guardianRelationship?.trim().isNotEmpty ?? false));
+  }
+
+  bool get _canContinue {
+    if (_loading) return false;
+    if (_step == 0) return _formData.previousInscriptionData != null;
+    if (_isReturningMember) {
+      return switch (_step) {
+        1 || 2 => true,
+        3 => _hasCompleteIdentification,
+        4 => _hasSelectedAvailablePlan,
+        _ => false,
+      };
+    }
+    return switch (_step) {
+      1 => true,
+      2 => _hasCompleteIdentification,
+      3 || 4 => _hasSelectedAvailablePlan,
+      5 =>
+        _formData.paymentSelectionData != null &&
+            (_formData.paymentSelectionData?.paymentMethod !=
+                    CorePaymentType.directTransfer ||
+                (_formData.paymentSelectionData?.referenceId
+                        ?.trim()
+                        .isNotEmpty ??
+                    false)),
+      _ => false,
+    };
+  }
+
+  String get _continueLabel =>
+      _step == _totalSteps - 1 ? 'FINALIZAR' : 'CONTINUAR';
 
   @override
   void initState() {
@@ -95,12 +160,99 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
     }
   }
 
-  void _back() {
-    if (_step == 0) {
-      Navigator.of(context).maybePop();
-    } else {
-      _goToStep(_step - 1);
+  void _backStep() => _goToStep(_step - 1);
+
+  Future<void> _requestExit() async {
+    if (_hasEnteredData) {
+      final shouldExit = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('¿Salir del registro?'),
+          content: const Text(
+            'Si sales ahora, perderás los datos que ingresaste. '
+            '¿Quieres salir de todos modos?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Continuar registrándome'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Salir'),
+            ),
+          ],
+        ),
+      );
+      if (shouldExit != true || !mounted) return;
     }
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (_) => false,
+    );
+  }
+
+  Future<void> _continueFromCurrentStep() async {
+    if (_step == 0) {
+      _goToStep(1);
+    } else if (_isReturningMember) {
+      switch (_step) {
+        case 1:
+          _goToStep(2);
+          break;
+        case 2:
+          await _personalDataFormKey.currentState?.submit();
+          break;
+        case 3:
+          _goToStep(4);
+          break;
+        case 4:
+          await _complete();
+          break;
+      }
+    } else {
+      switch (_step) {
+        case 1:
+          await _personalDataFormKey.currentState?.submit();
+          break;
+        case 2:
+          _goToStep(3);
+          break;
+        case 3:
+          _goToStep(4);
+          break;
+        case 4:
+          _goToStep(5);
+          break;
+        case 5:
+          await _complete();
+          break;
+      }
+    }
+  }
+
+  Widget _buildBottomActions() {
+    return Row(
+      children: [
+        if (_step > 0) ...[
+          Expanded(
+            child: WhiteButton(text: 'REGRESAR', onPressed: _backStep),
+          ),
+          const SizedBox(width: 12),
+        ],
+        Expanded(
+          child: RedButton(
+            text: _continueLabel,
+            onPressed: _canContinue ? _continueFromCurrentStep : null,
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _markPersonalDataChanged() {
+    if (_hasEditedPersonalData) return;
+    setState(() => _hasEditedPersonalData = true);
   }
 
   void _updatePersonalData(MemberInscription_PersonalData data) => setState(() {
@@ -302,24 +454,28 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
       title: names[_step],
       subtitle: subtitles[_step],
       isLoading: _loading,
-      onBack: _back,
-      child: SizedBox(
-        height: MediaQuery.sizeOf(context).height * 0.72,
-        child: PageView(
-          controller: _pages,
-          physics: const NeverScrollableScrollPhysics(),
-          children: _isReturningMember
-              ? [
+      onBack: _requestExit,
+      bottomActions: _buildBottomActions(),
+      child: PageView(
+        controller: _pages,
+        physics: const NeverScrollableScrollPhysics(),
+        children: _isReturningMember
+            ? [
                   RegisterPreviousInscriptionScreen(
                     data: _formData.previousInscriptionData,
                     onDataChanged: _updatePreviousInscriptionData,
                     onContinue: () => _goToStep(1),
+                    showContinueButton: false,
                   ),
                   RegisterAccountValidationNoticeScreen(
                     onContinue: () => _goToStep(2),
+                    showContinueButton: false,
                   ),
                   RegisterPersonalDataScreen(
                     initialData: personal,
+                    formKey: _personalDataFormKey,
+                    showContinueButton: false,
+                    onChanged: _markPersonalDataChanged,
                     onContinue: (data) {
                       _updatePersonalData(data);
                       _goToStep(3);
@@ -333,6 +489,7 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
                       data: _formData.idData,
                       onDataChanged: _updateIdData,
                       onContinue: () => _goToStep(4),
+                      showContinueButton: false,
                     ),
                   RegisterPlanSelectionScreen(
                     plans: _membershipPlans,
@@ -342,16 +499,21 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
                     data: _formData.planSelectionData,
                     onDataChanged: _updatePlanData,
                     onContinue: _complete,
+                    showContinueButton: false,
                   ),
-                ]
-              : [
+              ]
+            : [
                   RegisterPreviousInscriptionScreen(
                     data: _formData.previousInscriptionData,
                     onDataChanged: _updatePreviousInscriptionData,
                     onContinue: () => _goToStep(1),
+                    showContinueButton: false,
                   ),
                   RegisterPersonalDataScreen(
                     initialData: personal,
+                    formKey: _personalDataFormKey,
+                    showContinueButton: false,
+                    onChanged: _markPersonalDataChanged,
                     onContinue: (data) {
                       _updatePersonalData(data);
                       _goToStep(2);
@@ -365,6 +527,7 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
                       data: _formData.idData,
                       onDataChanged: _updateIdData,
                       onContinue: () => _goToStep(3),
+                      showContinueButton: false,
                     ),
                   RegisterPlanSelectionScreen(
                     plans: _membershipPlans,
@@ -374,6 +537,7 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
                     data: _formData.planSelectionData,
                     onDataChanged: _updatePlanData,
                     onContinue: () => _goToStep(4),
+                    showContinueButton: false,
                   ),
                   RegisterPaymentSummaryScreen(
                     plans: _membershipPlans,
@@ -382,14 +546,15 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
                     onRetry: _loadActiveMembershipPlans,
                     data: _formData.planSelectionData,
                     onContinue: () => _goToStep(5),
+                    showContinueButton: false,
                   ),
                   RegisterPaymentSelectionScreen(
                     data: _formData.paymentSelectionData,
                     onDataChanged: _updatePaymentData,
                     onContinue: _complete,
+                    showContinueButton: false,
                   ),
-                ],
-        ),
+              ],
       ),
     );
   }

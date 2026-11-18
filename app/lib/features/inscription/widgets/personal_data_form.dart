@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:cloud_functions/cloud_functions.dart';
@@ -14,14 +15,24 @@ final _emailPattern = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
 class PersonalDataForm extends StatefulWidget {
   final void Function(MemberInscription_PersonalData usuario) onSubmit;
   final MemberInscription_PersonalData? initialData;
+  final bool showContinueButton;
+  final VoidCallback? onChanged;
+  final Future<bool?> Function(String email)? checkEmailAvailability;
 
-  const PersonalDataForm({super.key, required this.onSubmit, this.initialData});
+  const PersonalDataForm({
+    super.key,
+    required this.onSubmit,
+    this.initialData,
+    this.showContinueButton = true,
+    this.onChanged,
+    this.checkEmailAvailability,
+  });
 
   @override
-  State<PersonalDataForm> createState() => _PersonalDataFormState();
+  PersonalDataFormState createState() => PersonalDataFormState();
 }
 
-class _PersonalDataFormState extends State<PersonalDataForm> {
+class PersonalDataFormState extends State<PersonalDataForm> {
   final _formKey = GlobalKey<FormState>();
   final _firstNameCtrl = TextEditingController();
   final _lastNameCtrl = TextEditingController();
@@ -42,20 +53,18 @@ class _PersonalDataFormState extends State<PersonalDataForm> {
   bool _seePasswordConfirmation = false;
 
   final _emailFieldKey = GlobalKey<FormFieldState<String>>();
-  final _emailFocus = FocusNode();
   // Último resultado de checkEmailAvailable, por correo normalizado.
   String? _checkedEmail;
   bool? _checkedEmailAvailable;
   bool _checkingEmail = false;
   bool _submitting = false;
+  Timer? _emailCheckDebounce;
+  int _emailCheckGeneration = 0;
 
   @override
   void initState() {
     super.initState();
     _restoreData(widget.initialData);
-    _emailFocus.addListener(() {
-      if (!_emailFocus.hasFocus) _checkEmail();
-    });
   }
 
   @override
@@ -114,42 +123,74 @@ class _PersonalDataFormState extends State<PersonalDataForm> {
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
     _passwordConfirmationCtrl.dispose();
-    _emailFocus.dispose();
+    _emailCheckDebounce?.cancel();
     super.dispose();
   }
 
   String get _normalizedEmail => _emailCtrl.text.trim().toLowerCase();
 
+  Future<void> submit() => _submit();
+
   /// Consulta en el servidor si el correo ya tiene cuenta. Devuelve null si
   /// no se pudo verificar (sin conexión, etc.); en ese caso se deja
   /// continuar y el error se detecta al crear la cuenta.
-  Future<bool?> _checkEmail() async {
-    final email = _normalizedEmail;
+  void _onEmailChanged(String value) {
+    _emailCheckDebounce?.cancel();
+    final generation = ++_emailCheckGeneration;
+    final email = value.trim().toLowerCase();
+
+    setState(() {
+      _checkingEmail = false;
+    });
+
+    if (!_emailPattern.hasMatch(email)) return;
+    if (email == _checkedEmail) {
+      _emailFieldKey.currentState?.validate();
+      return;
+    }
+
+    _emailCheckDebounce = Timer(const Duration(milliseconds: 500), () {
+      if (!mounted || generation != _emailCheckGeneration) return;
+      unawaited(_checkEmail(email, generation: generation));
+    });
+  }
+
+  Future<bool?> _checkEmail(String? requestedEmail, {int? generation}) async {
+    final email = requestedEmail ?? _normalizedEmail;
     if (!_emailPattern.hasMatch(email)) return null;
     if (email == _checkedEmail) return _checkedEmailAvailable;
 
+    _emailCheckDebounce?.cancel();
+    final requestGeneration = generation ?? ++_emailCheckGeneration;
     setState(() => _checkingEmail = true);
     bool? available;
     try {
-      final response =
-          await FirebaseFunctions.instanceFor(region: 'us-central1')
-              .httpsCallable('checkEmailAvailable')
-              .call<Map<String, dynamic>>({'email': email});
-      available = response.data['available'] as bool?;
+      final checkEmailAvailability = widget.checkEmailAvailability;
+      if (checkEmailAvailability != null) {
+        available = await checkEmailAvailability(email);
+      } else {
+        final response =
+            await FirebaseFunctions.instanceFor(region: 'us-central1')
+                .httpsCallable('checkEmailAvailable')
+                .call<Map<String, dynamic>>({'email': email});
+        available = response.data['available'] as bool?;
+      }
     } catch (e) {
       debugPrint('No se pudo verificar el correo: $e');
     }
     if (!mounted) return available;
 
-    setState(() {
-      _checkingEmail = false;
-      // Solo se guarda si el usuario no cambió el correo mientras tanto.
-      if (available != null && email == _normalizedEmail) {
-        _checkedEmail = email;
-        _checkedEmailAvailable = available;
-      }
-    });
-    _emailFieldKey.currentState?.validate();
+    if (requestGeneration == _emailCheckGeneration) {
+      setState(() {
+        _checkingEmail = false;
+        // Solo se guarda si el usuario no cambió el correo mientras tanto.
+        if (available != null && email == _normalizedEmail) {
+          _checkedEmail = email;
+          _checkedEmailAvailable = available;
+        }
+      });
+      _emailFieldKey.currentState?.validate();
+    }
     return available;
   }
 
@@ -158,7 +199,7 @@ class _PersonalDataFormState extends State<PersonalDataForm> {
     if (email.isEmpty) return 'Campo requerido';
     if (!_emailPattern.hasMatch(email)) return 'Correo inválido';
     if (email == _checkedEmail && _checkedEmailAvailable == false) {
-      return 'Este correo ya está registrado. Inicia sesión.';
+      return 'Este correo ya está registrado. ';
     }
     return null;
   }
@@ -207,6 +248,7 @@ class _PersonalDataFormState extends State<PersonalDataForm> {
       final regexp = RegExp(r'\.([^.]+)$');
       _photoFormat = regexp.firstMatch(imagen.name)?.group(1)?.toLowerCase();
     });
+    widget.onChanged?.call();
   }
 
   // Abre el calendario en español de México.
@@ -226,18 +268,24 @@ class _PersonalDataFormState extends State<PersonalDataForm> {
         _birthDate = fecha;
         _dateCtrl.text = _formatDate(fecha);
       });
+      widget.onChanged?.call();
     }
   }
 
   Future<void> _submit() async {
+    if (_submitting) return;
     final form = _formKey.currentState;
-    if (form == null || !form.validate() || _submitting) return;
+    if (form == null) return;
+
+    if (!form.validate()) return;
 
     // Por si escribió el correo y tocó CONTINUAR sin salir del campo.
     setState(() => _submitting = true);
-    final available = await _checkEmail();
+    final email = _normalizedEmail;
+    final available = await _checkEmail(email);
     if (!mounted) return;
     setState(() => _submitting = false);
+    if (email != _normalizedEmail) return;
     if (available == false) {
       _emailFieldKey.currentState?.validate();
       return;
@@ -355,8 +403,8 @@ class _PersonalDataFormState extends State<PersonalDataForm> {
   Widget build(BuildContext context) {
     return Form(
       key: _formKey,
-      // Muestra los errores mientras se llena, no solo al final.
-      autovalidateMode: AutovalidateMode.onUserInteraction,
+      onChanged: widget.onChanged,
+      autovalidateMode: AutovalidateMode.disabled,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -462,10 +510,9 @@ class _PersonalDataFormState extends State<PersonalDataForm> {
             TextFormField(
               key: _emailFieldKey,
               controller: _emailCtrl,
-              focusNode: _emailFocus,
               keyboardType: TextInputType.emailAddress,
               autocorrect: false,
-              onChanged: (_) => setState(() {}),
+              onChanged: _onEmailChanged,
               decoration: _buildInputDecoration(
                 'tu-correo@ejemplo.com',
                 Icons.mail_outline,
@@ -531,29 +578,31 @@ class _PersonalDataFormState extends State<PersonalDataForm> {
             ),
           ),
 
-          const SizedBox(height: 4),
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton(
-              onPressed: _submitting ? null : _submit,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kRojo,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+          if (widget.showContinueButton) ...[
+            const SizedBox(height: 4),
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: _submitting ? null : _submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: kRojo,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-              ),
-              child: const Text(
-                'CONTINUAR',
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.8,
+                child: const Text(
+                  'CONTINUAR',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.8,
+                  ),
                 ),
               ),
             ),
-          ),
+          ],
         ],
       ),
     );

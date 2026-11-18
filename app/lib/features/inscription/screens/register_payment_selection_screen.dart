@@ -10,12 +10,14 @@ class RegisterPaymentSelectionScreen extends StatelessWidget {
   final MemberInscription_PaymentSelectionData? data;
   final ValueChanged<MemberInscription_PaymentSelectionData> onDataChanged;
   final VoidCallback onContinue;
+  final bool showContinueButton;
 
   const RegisterPaymentSelectionScreen({
     super.key,
     required this.data,
     required this.onDataChanged,
     required this.onContinue,
+    this.showContinueButton = true,
   });
 
   @override
@@ -179,12 +181,13 @@ class RegisterPaymentSelectionScreen extends StatelessWidget {
             ),
           ),
         ),
-        RedButton(
-          text: 'FINALIZAR REGISTRO',
-          onPressed: data == null || (isDirectTransfer && !hasReference)
-              ? null
-              : onContinue,
-        ),
+        if (showContinueButton)
+          RedButton(
+            text: 'FINALIZAR REGISTRO',
+            onPressed: data == null || (isDirectTransfer && !hasReference)
+                ? null
+                : onContinue,
+          ),
       ],
     );
   }

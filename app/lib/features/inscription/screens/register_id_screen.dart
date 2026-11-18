@@ -10,6 +10,7 @@ class RegisterIdScreen extends StatefulWidget {
   final MemberInscription_IdData? data;
   final ValueChanged<MemberInscription_IdData> onDataChanged;
   final VoidCallback onContinue;
+  final bool showContinueButton;
 
   const RegisterIdScreen({
     super.key,
@@ -17,6 +18,7 @@ class RegisterIdScreen extends StatefulWidget {
     required this.data,
     required this.onDataChanged,
     required this.onContinue,
+    this.showContinueButton = true,
   });
 
   @override
@@ -112,10 +114,11 @@ class _RegisterIdScreenState extends State<RegisterIdScreen> {
             ),
           ),
         ),
-        RedButton(
-          text: 'CONTINUAR',
-          onPressed: _isComplete ? widget.onContinue : null,
-        ),
+        if (widget.showContinueButton)
+          RedButton(
+            text: 'CONTINUAR',
+            onPressed: _isComplete ? widget.onContinue : null,
+          ),
       ],
     );
   }

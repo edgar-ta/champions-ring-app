@@ -9,12 +9,14 @@ class RegisterPreviousInscriptionScreen extends StatelessWidget {
   final MemberInscription_PreviousInscriptionData? data;
   final ValueChanged<MemberInscription_PreviousInscriptionData> onDataChanged;
   final VoidCallback onContinue;
+  final bool showContinueButton;
 
   const RegisterPreviousInscriptionScreen({
     super.key,
     required this.data,
     required this.onDataChanged,
     required this.onContinue,
+    this.showContinueButton = true,
   });
 
   @override
@@ -56,7 +58,11 @@ class RegisterPreviousInscriptionScreen extends StatelessWidget {
           ],
         ),
       ),
-      RedButton(text: 'CONTINUAR', onPressed: data == null ? null : onContinue),
+      if (showContinueButton)
+        RedButton(
+          text: 'CONTINUAR',
+          onPressed: data == null ? null : onContinue,
+        ),
     ],
   );
 }

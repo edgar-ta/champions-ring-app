@@ -14,6 +14,7 @@ class RegisterPlanSelectionScreen extends StatelessWidget {
   final MemberInscription_PlanSelectionData? data;
   final ValueChanged<MemberInscription_PlanSelectionData> onDataChanged;
   final VoidCallback onContinue;
+  final bool showContinueButton;
 
   const RegisterPlanSelectionScreen({
     super.key,
@@ -24,6 +25,7 @@ class RegisterPlanSelectionScreen extends StatelessWidget {
     required this.data,
     required this.onDataChanged,
     required this.onContinue,
+    this.showContinueButton = true,
   });
 
   @override
@@ -36,10 +38,11 @@ class RegisterPlanSelectionScreen extends StatelessWidget {
     return Column(
       children: [
         Expanded(child: _buildPlanContent(availablePlans)),
-        RedButton(
-          text: 'CONTINUAR',
-          onPressed: hasSelectedPlan ? onContinue : null,
-        ),
+        if (showContinueButton)
+          RedButton(
+            text: 'CONTINUAR',
+            onPressed: hasSelectedPlan ? onContinue : null,
+          ),
       ],
     );
   }

@@ -19,6 +19,7 @@ class RegistrationScaffold extends StatelessWidget {
   final bool blockScrolling;
   final Widget? footer; // si es null se usa "¿Ya tienes una cuenta?"
   final Widget child;
+  final Widget? bottomActions;
   final VoidCallback? onBack;
 
   const RegistrationScaffold({
@@ -36,6 +37,7 @@ class RegistrationScaffold extends StatelessWidget {
     this.showFooter = false,
     this.blockScrolling = false,
     this.footer,
+    this.bottomActions,
   });
 
   @override
@@ -43,78 +45,118 @@ class RegistrationScaffold extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Stack(
+        child: Column(
           children: [
-            SingleChildScrollView(
-              physics: blockScrolling
-                  ? const NeverScrollableScrollPhysics()
-                  : null,
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
               child: Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 480),
-                  child: AbsorbPointer(
-                    absorbing: isLoading,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _Header(
-                          stepIndex: stepIndex,
-                          totalSteps: totalSteps,
-                          stepName: stepName,
-                          nextStepName: nextStepName,
-                          headerTitle: headerTitle,
-                          onBack: onBack,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _Header(
+                        stepIndex: stepIndex,
+                        totalSteps: totalSteps,
+                        stepName: stepName,
+                        nextStepName: nextStepName,
+                        headerTitle: headerTitle,
+                        onBack: onBack,
+                      ),
+                      const SizedBox(height: 24),
+                      if (title != null)
+                        Text(
+                          title!,
+                          style: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
-                        const SizedBox(height: 24),
-                        if (title != null)
-                          Text(
-                            title!,
-                            style: const TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w800,
-                            ),
+                      if (subtitle != null) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          subtitle!,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: _gris,
+                            height: 1.3,
                           ),
-                        if (subtitle != null) ...[
-                          const SizedBox(height: 6),
-                          Text(
-                            subtitle!,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: _gris,
-                              height: 1.3,
-                            ),
-                          ),
-                        ],
-                        if (title != null || subtitle != null)
-                          const SizedBox(height: 20),
-                        child,
-                        if (showFooter) ...[
-                          const SizedBox(height: 12),
-                          footer ??
-                              RegistrationFooter(
-                                text: '¿Ya tienes una cuenta? ',
-                                action: 'Inicia sesión',
-                                // TODO: navegar a la pantalla de inicio de sesión
-                                onTap: () => Navigator.of(context).maybePop(),
-                              ),
-                        ],
+                        ),
                       ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) => Center(
+                        child: SizedBox(
+                          width: constraints.maxWidth < 480
+                              ? constraints.maxWidth
+                              : 480,
+                          height: constraints.maxHeight,
+                          child: AbsorbPointer(
+                            absorbing: isLoading,
+                            child: child,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (isLoading)
+                    const ColoredBox(
+                      color: Colors.black26,
+                      child: Center(
+                        child: CircularProgressIndicator(color: kRojo),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            if (showFooter)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                child:
+                    footer ??
+                    RegistrationFooter(
+                      text: '¿Ya tienes una cuenta? ',
+                      action: 'Inicia sesión',
+                      onTap: () => Navigator.of(context).maybePop(),
+                    ),
+              ),
+          ],
+        ),
+      ),
+      bottomNavigationBar: bottomActions == null
+          ? null
+          : SafeArea(
+              top: false,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  border: Border(top: BorderSide(color: Color(0xFFE8E8E8))),
+                ),
+                child: Align(
+                  alignment: Alignment.center,
+                  heightFactor: 1,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 480),
+                    child: AbsorbPointer(
+                      absorbing: isLoading,
+                      child: bottomActions,
                     ),
                   ),
                 ),
               ),
             ),
-            if (isLoading)
-              const Positioned.fill(
-                child: ColoredBox(
-                  color: Colors.black26,
-                  child: Center(child: CircularProgressIndicator(color: kRojo)),
-                ),
-              ),
-          ],
-        ),
-      ),
     );
   }
 }

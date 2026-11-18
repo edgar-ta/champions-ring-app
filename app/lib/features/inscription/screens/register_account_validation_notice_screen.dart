@@ -4,10 +4,12 @@ import '../widgets/registration_scaffold.dart';
 
 class RegisterAccountValidationNoticeScreen extends StatelessWidget {
   final VoidCallback onContinue;
+  final bool showContinueButton;
 
   const RegisterAccountValidationNoticeScreen({
     super.key,
     required this.onContinue,
+    this.showContinueButton = true,
   });
 
   @override
@@ -32,7 +34,8 @@ class RegisterAccountValidationNoticeScreen extends StatelessWidget {
           ),
         ),
       ),
-      RedButton(text: 'CONTINUAR', onPressed: onContinue),
+      if (showContinueButton)
+        RedButton(text: 'CONTINUAR', onPressed: onContinue),
     ],
   );
 }

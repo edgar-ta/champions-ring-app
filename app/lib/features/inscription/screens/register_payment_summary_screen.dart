@@ -14,6 +14,7 @@ class RegisterPaymentSummaryScreen extends StatelessWidget {
   final VoidCallback onRetry;
   final MemberInscription_PlanSelectionData? data;
   final VoidCallback onContinue;
+  final bool showContinueButton;
 
   const RegisterPaymentSummaryScreen({
     super.key,
@@ -23,6 +24,7 @@ class RegisterPaymentSummaryScreen extends StatelessWidget {
     required this.onRetry,
     required this.data,
     required this.onContinue,
+    this.showContinueButton = true,
   });
 
   @override
@@ -37,12 +39,13 @@ class RegisterPaymentSummaryScreen extends StatelessWidget {
     return Column(
       children: [
         Expanded(child: _buildSummaryContent(plan, planCost, total)),
-        RedButton(
-          text: 'CONTINUAR',
-          onPressed: isLoading || loadError != null || plan == null
-              ? null
-              : onContinue,
-        ),
+        if (showContinueButton)
+          RedButton(
+            text: 'CONTINUAR',
+            onPressed: isLoading || loadError != null || plan == null
+                ? null
+                : onContinue,
+          ),
       ],
     );
   }
