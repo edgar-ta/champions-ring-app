@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../shared/ui/text_styles.dart';
 import '../widgets/registration_scaffold.dart';
 
 class RegisterAccountValidationNoticeScreen extends StatelessWidget {
@@ -43,7 +44,7 @@ class RegisterAccountValidationNoticeScreen extends StatelessWidget {
                         'gimnasio dentro de los próximos 3 días para que recepción '
                         'valide tu cuenta. Si no lo haces, tu cuenta será bloqueada.',
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 16, height: 1.4),
+                        style: SharedTextStyles.formSupporting,
                       ),
                     ],
                   ),

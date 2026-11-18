@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../ui/text_styles.dart';
+
 /// País disponible para el selector del teléfono.
 class PhoneCountryCode {
   final String country;
@@ -102,7 +104,10 @@ class _PhoneNumberInputState extends State<PhoneNumberInput> {
                   .map(
                     (country) => Align(
                       alignment: Alignment.centerLeft,
-                      child: Text(country.dialCode),
+                      child: Text(
+                        country.dialCode,
+                        style: SharedTextStyles.inputHint,
+                      ),
                     ),
                   )
                   .toList(),
@@ -110,10 +115,14 @@ class _PhoneNumberInputState extends State<PhoneNumberInput> {
                   .map(
                     (country) => DropdownMenuItem(
                       value: country,
-                      child: Text('${country.country} (${country.dialCode})'),
+                      child: Text(
+                        '${country.country} (${country.dialCode})',
+                        style: SharedTextStyles.inputHint,
+                      ),
                     ),
                   )
                   .toList(),
+              style: SharedTextStyles.inputHint,
               onChanged: (country) {
                 if (country == null) return;
                 setState(() => _country = country);
@@ -136,7 +145,9 @@ class _PhoneNumberInputState extends State<PhoneNumberInput> {
                 border: InputBorder.none,
                 isDense: true,
                 counterText: '',
+                hintStyle: SharedTextStyles.inputHint,
               ),
+              style: SharedTextStyles.input,
               onChanged: (_) {
                 field.didChange(_fullValue);
                 widget.onChanged(_fullValue);

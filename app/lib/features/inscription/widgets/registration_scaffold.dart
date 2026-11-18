@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'personal_data_form.dart' show kRojo;
+import '../../../shared/ui/text_styles.dart';
 
 const Color _gris = Color(0xFF6B6B6B);
 
@@ -74,14 +75,7 @@ class RegistrationScaffold extends StatelessWidget {
                         ),
                       if (subtitle != null) ...[
                         const SizedBox(height: 6),
-                        Text(
-                          subtitle!,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: _gris,
-                            height: 1.3,
-                          ),
-                        ),
+                        Text(subtitle!, style: SharedTextStyles.formSupporting),
                       ],
                     ],
                   ),

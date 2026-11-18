@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../models/member_inscription_data.dart';
 import '../../../shared/widgets/phone_number_input.dart';
+import '../../../shared/ui/text_styles.dart';
 
 const Color kRojo = Color(0xFFEA3A3F);
 const Color _gris = Color(0xFF6B6B6B);
@@ -356,7 +357,7 @@ class PersonalDataFormState extends State<PersonalDataForm> {
     Widget? sufijo,
   }) => InputDecoration(
     hintText: hint,
-    hintStyle: const TextStyle(color: Color(0xFF8A8A8A), fontSize: 14),
+    hintStyle: SharedTextStyles.inputHint,
     prefixIcon: Icon(icono, color: const Color(0xFF555555), size: 20),
     suffixIcon: sufijo,
     filled: true,
@@ -373,14 +374,7 @@ class PersonalDataFormState extends State<PersonalDataForm> {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          etiqueta,
-          style: const TextStyle(
-            fontSize: 13,
-            color: _gris,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+        Text(etiqueta, style: SharedTextStyles.formSupporting),
         const SizedBox(height: 8),
         campo,
       ],
@@ -418,6 +412,7 @@ class PersonalDataFormState extends State<PersonalDataForm> {
                   'Nombre(s)',
                   TextFormField(
                     controller: _firstNameCtrl,
+                    style: SharedTextStyles.input,
                     textCapitalization: TextCapitalization.words,
                     decoration: _buildInputDecoration(
                       'Juan',
@@ -435,6 +430,7 @@ class PersonalDataFormState extends State<PersonalDataForm> {
                   'Apellidos',
                   TextFormField(
                     controller: _lastNameCtrl,
+                    style: SharedTextStyles.input,
                     textCapitalization: TextCapitalization.words,
                     decoration: _buildInputDecoration(
                       'Pérez Alcedo',
@@ -453,6 +449,7 @@ class PersonalDataFormState extends State<PersonalDataForm> {
             'Fecha de nacimiento',
             TextFormField(
               controller: _dateCtrl,
+              style: SharedTextStyles.input,
               readOnly: true,
               onTap: _pickBirthDate,
               decoration: _buildInputDecoration(
@@ -470,6 +467,7 @@ class PersonalDataFormState extends State<PersonalDataForm> {
               'Nombre completo del tutor',
               TextFormField(
                 controller: _guardianNameCtrl,
+                style: SharedTextStyles.input,
                 textCapitalization: TextCapitalization.words,
                 decoration: _buildInputDecoration(
                   'Nombre y apellidos',
@@ -491,6 +489,7 @@ class PersonalDataFormState extends State<PersonalDataForm> {
               'Parentesco del tutor',
               TextFormField(
                 controller: _guardianRelationshipCtrl,
+                style: SharedTextStyles.input,
                 textCapitalization: TextCapitalization.sentences,
                 decoration: _buildInputDecoration(
                   'Madre, padre, tutor legal',
@@ -510,6 +509,7 @@ class PersonalDataFormState extends State<PersonalDataForm> {
             TextFormField(
               key: _emailFieldKey,
               controller: _emailCtrl,
+              style: SharedTextStyles.input,
               keyboardType: TextInputType.emailAddress,
               autocorrect: false,
               onChanged: _onEmailChanged,
@@ -536,6 +536,7 @@ class PersonalDataFormState extends State<PersonalDataForm> {
             'Contraseña',
             TextFormField(
               controller: _passwordCtrl,
+              style: SharedTextStyles.input,
               obscureText: !_seePassword,
               decoration: _buildInputDecoration(
                 'Crea una contraseña segura',
@@ -557,6 +558,7 @@ class PersonalDataFormState extends State<PersonalDataForm> {
             'Confirmar contraseña',
             TextFormField(
               controller: _passwordConfirmationCtrl,
+              style: SharedTextStyles.input,
               obscureText: !_seePasswordConfirmation,
               decoration: _buildInputDecoration(
                 'Repite tu contraseña anterior',
@@ -659,15 +661,12 @@ class PersonalDataFormState extends State<PersonalDataForm> {
                   children: [
                     Text(
                       'Sube una selfie o foto clara',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                      ),
+                      style: SharedTextStyles.inputHint,
                     ),
                     SizedBox(height: 4),
                     Text(
                       'Formatos JPG, PNG. Rostro visible sin gorra ni lentes.',
-                      style: TextStyle(fontSize: 11, color: _gris),
+                      style: SharedTextStyles.inputHint,
                     ),
                   ],
                 ),

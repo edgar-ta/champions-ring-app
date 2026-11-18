@@ -37,7 +37,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Paso 3 de 5: Datos personales'), findsOneWidget);
-    expect(find.textContaining('el sistema lo tiene presente'), findsOneWidget);
+    expect(
+      find.textContaining('Confirma tus datos para crear tu cuenta.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('new members skip the validation notice', (tester) async {
