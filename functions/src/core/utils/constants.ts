@@ -19,9 +19,10 @@ export const NOTIFICATION_URL = process.env.MP_NOTIFICATION_URL ??
   `${FUNCTIONS_BASE_URL}/mercadoPagoWebhook?source_news=webhooks`;
 export const RETURN_URL = process.env.PAYMENT_RETURN_URL ??
   `${FUNCTIONS_BASE_URL}/paymentReturn`;
-export const USE_SANDBOX = process.env.MP_USE_SANDBOX === "true";
 export const MP_ACCESS_TOKEN = defineSecret("MP_ACCESS_TOKEN");
 export const MP_WEBHOOK_SECRET = defineSecret("MP_WEBHOOK_SECRET");
+export const MP_ACCESS_TOKEN_V2 = defineSecret("MP_ACCESS_TOKEN_V2");
+export const MP_WEBHOOK_SECRET_V2 = defineSecret("MP_WEBHOOK_SECRET_V2");
 
 export const MEMBERSHIPS = {
   day: {amount: 69, days: 1, label: "Acceso por 1 d?a", planId: 1},

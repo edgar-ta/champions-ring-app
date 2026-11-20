@@ -62,8 +62,8 @@ export {
 
 export {
   paymentReturn,
-} from "./functions/payment_return/payment_return.js";
+} from "./functions/payment_return.js";
 
 export {
   mercadoPagoWebhook,
-} from "./functions/mercado_pago_webhook/mercado_pago_webhook.js";
+} from "./functions/mercado_pago_webhook.js";

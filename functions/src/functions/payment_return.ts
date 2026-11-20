@@ -1,5 +1,5 @@
 import {onRequest} from "firebase-functions/v2/https";
-import {REGION} from "../../core/utils/constants.js";
+import {REGION} from "../core/utils/constants.js";
 
 const RETURN_MESSAGES: Record<string, { title: string; body: string }> = {
   success: {

@@ -11,27 +11,18 @@ import {
 } from "../core/repositories/core_payment_repository.js";
 import {
   db,
-  MP_ACCESS_TOKEN,
-  NOTIFICATION_URL,
+  MP_ACCESS_TOKEN_V2,
   REGION,
   REUSE_WINDOW_MS,
-  RETURN_URL,
-  USE_SANDBOX,
 } from "../core/utils/constants.js";
 import {MercadoPagoPayment} from "../shared/models/payment.js";
 import type {SimpleItem} from "../shared/models/simple_item.js";
-import {mercadoPagoApi} from "../shared/utils/shared.js";
+import {registerOrder} from "../shared/utils/register_order.js";
 
 type CheckoutItem = Pick<
   SimpleItem,
   "productId" | "title" | "quantity" | "unitPrice"
 >;
-
-interface MercadoPagoPreference {
-  id?: string;
-  init_point?: string;
-  sandbox_init_point?: string;
-}
 
 /**
  * Registra un documento de tipo `mercado-pago` en la colección `payments`.
@@ -57,7 +48,7 @@ interface MercadoPagoPreference {
  * `{ checkoutUrl: string }`.
  */
 export const createPaymentCheckout = onCall(
-  {region: REGION, secrets: [MP_ACCESS_TOKEN]},
+  {region: REGION, secrets: [MP_ACCESS_TOKEN_V2]},
   async (request) => {
     const paymentUid: unknown = request.data?.paymentUid;
     if (
@@ -87,23 +78,36 @@ export const createPaymentCheckout = onCall(
     }
 
     let payerRef: DocumentReference | undefined;
+    let payer: {
+      email: string;
+      firstName: string;
+      lastName: string;
+    } | undefined;
     if (typeof clientUid === "string") {
       const clientRepository = new CoreClientRepository(db);
-      if (!(await clientRepository.isDocumentPresent(clientUid))) {
+      const client = await clientRepository.findById(clientUid);
+      if (client === undefined) {
         throw new HttpsError(
           "invalid-argument",
           "El cliente especificado no existe.",
         );
       }
       payerRef = clientRepository.collection.doc(clientUid);
+      payer = {
+        email: client.email,
+        firstName: client.name,
+        lastName: client.lastName,
+      };
     }
 
-    const amount = Math.round(
-      items.reduce((total, item) => total + item.quantity * item.unitPrice, 0) *
-        100,
-    ) / 100;
+    const amountCents = items.reduce(
+      (total, item) =>
+        total + item.quantity * Math.round(item.unitPrice * 100),
+      0,
+    );
+    const amount = amountCents / 100;
 
-    if (!Number.isFinite(amount) || amount <= 0) {
+    if (!Number.isSafeInteger(amountCents) || amount <= 0) {
       throw new HttpsError(
         "invalid-argument",
         "El monto del pago debe ser mayor que cero.",
@@ -177,43 +181,18 @@ export const createPaymentCheckout = onCall(
       payerRef,
       checkoutUrl: "",
       status: "pending",
-      preferenceId: "",
     });
 
     await paymentRepository.upsert(payment.toCorePayment());
 
-    let response: {
-      ok: boolean;
-      status: number;
-      data: MercadoPagoPreference;
-    };
+    let order: {id: string; checkoutUrl: string};
 
     try {
-      response = await mercadoPagoApi<MercadoPagoPreference>(
-        "/checkout/preferences",
-        {
-          method: "POST",
-          idempotencyKey: paymentUid,
-          body: {
-            items: items.map((item) => ({
-              id: item.productId,
-              title: item.title,
-              quantity: item.quantity,
-              currency_id: "MXN",
-              unit_price: item.unitPrice,
-            })),
-            external_reference: paymentUid,
-            notification_url: NOTIFICATION_URL,
-            back_urls: {
-              success: `${RETURN_URL}/success`,
-              pending: `${RETURN_URL}/pending`,
-              failure: `${RETURN_URL}/failure`,
-            },
-            auto_return: "approved",
-            statement_descriptor: "Champion's Ring",
-          },
-        },
-      );
+      order = await registerOrder({
+        paymentUid,
+        items,
+        payer,
+      });
     } catch (error) {
       logger.error("No se pudo contactar a Mercado Pago", error);
       await paymentRepository.upsert(
@@ -227,40 +206,16 @@ export const createPaymentCheckout = onCall(
       );
     }
 
-    const preference = response.data;
-    if (
-      !response.ok ||
-      typeof preference.id !== "string" ||
-      preference.id === "" ||
-      typeof preference.init_point !== "string" ||
-      preference.init_point === ""
-    ) {
-      logger.error("Error al crear preferencia de pago", {
-        status: response.status,
-        response: preference,
-      });
-      await paymentRepository.upsert(
-        payment
-          .copyWith({status: "checkout_creation_failed"})
-          .toCorePayment(),
-      );
-      throw new HttpsError("internal", "No fue posible iniciar el pago.");
-    }
-
-    const checkoutUrl = USE_SANDBOX ?
-      preference.sandbox_init_point ?? preference.init_point :
-      preference.init_point;
-
     await paymentRepository.upsert(
       payment
         .copyWith({
-          checkoutUrl,
-          preferenceId: preference.id,
+          checkoutUrl: order.checkoutUrl,
+          orderId: order.id,
         })
         .toCorePayment(),
     );
 
-    return {checkoutUrl};
+    return {checkoutUrl: order.checkoutUrl};
   },
 );
 

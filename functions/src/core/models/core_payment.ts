@@ -80,6 +80,7 @@ export class CorePayment extends FirestoreEntity {
     readonly checkoutUrl?: string,
     readonly status?: CorePaymentStatus,
     readonly preferenceId?: string,
+    readonly orderId?: string,
     readonly subscriptionId?: string,
     readonly subscriptionStatus?: CorePaymentSubscriptionStatus,
     readonly subscriptionMembershipType?: CoreSubscriptionMembershipType,
@@ -116,6 +117,7 @@ export class CorePayment extends FirestoreEntity {
       ...(this.preferenceId !== undefined ?
         {preferenceId: this.preferenceId} :
         {}),
+      ...(this.orderId !== undefined ? {orderId: this.orderId} : {}),
       ...(this.subscriptionId !== undefined ?
         {subscription_id: this.subscriptionId} :
         {}),
@@ -164,6 +166,7 @@ export class CorePayment extends FirestoreEntity {
       readOptionalString(data, "checkoutUrl"),
       readOptionalPaymentStatus(data),
       readOptionalString(data, "preferenceId"),
+      readOptionalString(data, "orderId"),
       readOptionalString(data, "subscription_id", "subscriptionId"),
       readOptionalSubscriptionStatus(data),
       readOptionalSubscriptionType(data),
