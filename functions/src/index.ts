@@ -29,37 +29,7 @@ export const checkEmailAvailable = onCall(
     }
   },
 );
-
-// ---------------------------------------------------------------------------
-// 1. Flutter llama a esta función para iniciar un pago.
-// ---------------------------------------------------------------------------
-
-
-export {
-  createMembershipCheckout,
-} from
-  // eslint-disable-next-line max-len
-  "./functions/create_membership_checkout/create_membership_checkout.js";
-
 export {createPaymentCheckout} from "./functions/create_payment_checkout.js";
-
-export {
-  createMembershipSubscription,
-} from
-  // eslint-disable-next-line max-len
-  "./functions/create_membership_subscription/create_membership_subscription.js";
-
-export {
-  cancelMembershipSubscription,
-} from
-  // eslint-disable-next-line max-len
-  "./functions/cancel_membership_subscription/cancel_membership_subscription.js";
-
-export {
-  syncMembershipSubscription,
-} from
-  "./functions/sync_membership_subscription/sync_membership_subscription.js";
-
 export {
   paymentReturn,
 } from "./functions/payment_return.js";

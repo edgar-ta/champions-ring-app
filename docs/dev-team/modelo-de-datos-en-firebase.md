@@ -25,134 +25,136 @@ Versión 22.0.0
 
 ```txt
 clients
-	uid: string
-	name: string
-	lastName: string
-	email: string
+    uid: string
+    name: string
+    lastName: string
+    email: string
 
-	sampleClassDate: timestamp?
+    sampleClassDate?: timestamp
 
-	creationDate: timestamp
-	deletionDate: timestamp?
+    creationDate: timestamp
+    deletionDate?: timestamp
 
 members
-	uid: string
-	birthDate: timestamp
-	phone: string
-	photoUrl: string?
-	legalDataAreTheirs: boolean
-	inscriptionPaid: boolean
+    uid: string
+    birthDate: timestamp
+    phone: string
+    photoUrl?: string
+    legalDataAreTheirs: boolean
+    inscriptionPaid: boolean
 
-	membershipPlanRef: reference?
-	latestRenewalRef: reference?
+    membershipPlanRef?: reference
+    latestRenewalRef?: reference
 
-	guardianName: string?
-	guardianPhone: string?
-	guardianRelationship: string?
-	curpUrl: string?
-	curpValidated: boolean?
+    guardianName?: string
+    guardianPhone?: string
+    guardianRelationship?: string
+    curpUrl?: string
+    curpValidated?: boolean
 
-	ineBackUrl: string
-	ineBackValidated: boolean
-	ineFrontUrl: string
-	ineFrontValidated: boolean
+    ineBackUrl: string
+    ineBackValidated: boolean
+    ineFrontUrl: string
+    ineFrontValidated: boolean
 
-	waiverAgreementUrl: string?
-	waiverAgreementValidated: boolean?
+    waiverAgreementUrl?: string
+    waiverAgreementValidated?: boolean
 
-	creationDate: timestamp
-	deletionDate: timestamp?
+    creationDate: timestamp
+    deletionDate?: timestamp
 
-	renewals/
-		uid: string
-		startDate: timestamp
-		endDate: timestamp
-		membershipPlanRef: reference
-		paymentRef: reference
-		amount: double
+    renewals/
+        uid: string
+        startDate: timestamp
+        endDate: timestamp
+        membershipPlanRef: reference
+        paymentRef: reference
+        amount: double
 
-		creationDate: timestamp
-		deletionDate: timestamp?
+        creationDate: timestamp
+        deletionDate?: timestamp
 
 receptionists
-	uid: string
-	name: string
-	lastName: string
-	email: string
+    uid: string
+    name: string
+    lastName: string
+    email: string
 
-	creationDate: timestamp
-	deletionDate: timestamp?
+    creationDate: timestamp
+    deletionDate?: timestamp
 
 administrators
-	uid: string
-	name: string
-	lastName: string
-	email: string
+    uid: string
+    name: string
+    lastName: string
+    email: string
 
-	creationDate: timestamp
-	deletionDate: timestamp?
+    creationDate: timestamp
+    deletionDate?: timestamp
 
 membership_plans
-	uid: string
-	cost: double
-	benefits: string
-	duration: "1d" | "1w" | "1m"
+    uid: string
+    cost: double
+    benefits: string
+    duration: "1d" | "1w" | "1m"
 
-	creationDate: timestamp
-	deletionDate: timestamp?
+    creationDate: timestamp
+    deletionDate?: timestamp
 
 payments
-	uid: string
-	type: "cash" | "direct-transfer" | "mercado-pago"
+    uid: string
+    type: "cash" | "direct-transfer" | "mercado-pago"
 
-	amount: double
-	currency: "MXN" | "USD"
-	approvalDate: timestamp?
-	payerRef: ref?
+    amount: double
+    currency: "MXN" | "USD"
+    approvalDate?: timestamp
+    payerRef?: ref
+    renewalRef?: ref
 
-	-- mercado-pago only
-	checkoutUrl: string?
-	status: ("approved" | "rejected")?
-	preferenceId: string?
+    -- mercado-pago only
+    checkoutUrl?: string
+    status?: "approved" | "rejected" | "processing" | "refunded"
+    preferenceId?: string
+    rejectionDetail?: "high_risk" | "rejected_by_issuer" | "insufficient_amount" | "invalid_card_token" | "processing_error" | string
 
-	// Cobro automático (solo lo escriben las Cloud Functions)
-	subscription_id: string? // documento en subscriptions
-	subscription_status: "pending" | "authorized" | "paused" | "cancelled"?
-	subscription_membership_type: "week" | "month"?
-	subscription_next_payment_at: timestamp?
+    // Cobro automático (solo lo escriben las Cloud Functions)
+    subscription_id?: string // documento en subscriptions
+    subscription_status?: "pending" | "authorized" | "paused" | "cancelled"
+    subscription_membership_type?: "week" | "month"
+    subscription_next_payment_at?: timestamp
 
-	-- direct-transfer only
-	referenceId: string?
-	issuingEntity: ("bbva" | "santander" | "banco-azteca" | "elektra" | "other")?
-	issuingEntityName: string?
+    -- direct-transfer only
+    referenceId?: string
+    issuingEntity?: ("bbva" | "santander" | "banco-azteca" | "elektra" | "other")
+    issuingEntityName?: string
 
-	-- cash & direct-transfer
-	approverRef: ref?
+    -- cash & direct-transfer
+    approverRef?: ref
 
-	creationDate: timestamp
-	deletionDate: timestamp?
+    creationDate: timestamp
+    deletionDate?: timestamp
 
 subscriptions // una por cada autorización de cobro automático
-	uid: string
-	membershipType: "week" | "month"
-	membershipPlanId: number
-	amount: number
-	currency: "MXN"
-	frequencyDays: number
-	status: "creating" | "creation_failed" | "pending" | "authorized" | "paused" | "cancelled"
-	preapprovalId: string // id de la suscripción en Mercado Pago
-	checkoutUrl: string
-	nextPaymentAt: timestamp?
-	createdAt: timestamp
+    uid: string
+    membershipType: "week" | "month"
+    membershipPlanId: number
+    amount: number
+    currency: "MXN"
+    frequencyDays: number
+    status: "creating" | "creation_failed" | "pending" | "authorized" | "paused" | "cancelled"
+    preapprovalId: string // id de la suscripción en Mercado Pago
+    checkoutUrl: string
+    nextPaymentAt?: timestamp
+    createdAt: timestamp
 
 purchases
-	uid: string
+    uid: string
 
-	items/
-		uid: string
-		numberOfProducts: number
-		productRef: reference
-		individualPrice: number
+    items/
+        uid: string
+        numberOfProducts: number
+        productRef: reference
+        individualPrice: number
 ```
 
 Cada cobro automático aprobado se registra también en `payments` con

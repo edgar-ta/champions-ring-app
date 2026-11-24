@@ -2,7 +2,6 @@ import type {DocumentReference} from "firebase-admin/firestore";
 import {logger} from "firebase-functions";
 import {HttpsError, onCall} from "firebase-functions/v2/https";
 import {CoreDate} from "../core/models/core_date.js";
-import {CorePayment} from "../core/models/core_payment.js";
 import {
   CoreClientRepository,
 } from "../core/repositories/core_client_repository.js";
@@ -16,13 +15,8 @@ import {
   REUSE_WINDOW_MS,
 } from "../core/utils/constants.js";
 import {MercadoPagoPayment} from "../shared/models/payment.js";
-import type {SimpleItem} from "../shared/models/simple_item.js";
+import type {RegisterOrderItem} from "../shared/models/register_order.js";
 import {registerOrder} from "../shared/utils/register_order.js";
-
-type CheckoutItem = Pick<
-  SimpleItem,
-  "productId" | "title" | "quantity" | "unitPrice"
->;
 
 /**
  * Registra un documento de tipo `mercado-pago` en la colección `payments`.
@@ -30,7 +24,7 @@ type CheckoutItem = Pick<
  * El cuerpo de la solicitud requiere los siguientes parámetros:
  * - `paymentUid: string`. La id única a la cual estará asociada el
  *   pago a crear.
- * - `simpleItems: SimpleItem[]`. La lista de ítems para los cuales
+ * - `simpleItems: RegisterOrderItem[]`. La lista de ítems para los cuales
  *   se está generando un pago. Se utiliza para mostrarle el resumen
  *   de pago al cliente en la página de Mercado Pago.
  * - `clientUid: string?`. La id del cliente que realiza el pago.
@@ -115,22 +109,8 @@ export const createPaymentCheckout = onCall(
     }
 
     const paymentRepository = new CorePaymentRepository(db);
-    const existingSnapshot = await paymentRepository.collection
-      .doc(paymentUid)
-      .get();
-    if (existingSnapshot.exists) {
-      const existingDocument = existingSnapshot.data();
-      if (existingDocument === undefined) {
-        throw new HttpsError(
-          "internal",
-          "No fue posible leer el pago existente.",
-        );
-      }
-
-      const existingPayment = CorePayment.fromFirestore(
-        existingDocument,
-        existingSnapshot.id,
-      );
+    const existingPayment = await paymentRepository.findById(paymentUid);
+    if (existingPayment !== undefined) {
       if (
         existingPayment.type !== "mercado-pago" ||
         existingPayment.amount !== amount ||
@@ -222,9 +202,9 @@ export const createPaymentCheckout = onCall(
 /**
  * Valida los campos del artículo sin consultar un catálogo confiable.
  * @param {unknown} value Valor recibido en la solicitud.
- * @return {CheckoutItem[]} Artículos validados para el checkout.
+ * @return {RegisterOrderItem[]} Artículos validados para el checkout.
  */
-function parseSimpleItems(value: unknown): CheckoutItem[] {
+function parseSimpleItems(value: unknown): RegisterOrderItem[] {
   if (!Array.isArray(value) || value.length === 0) {
     throw new HttpsError(
       "invalid-argument",
@@ -232,7 +212,7 @@ function parseSimpleItems(value: unknown): CheckoutItem[] {
     );
   }
 
-  return value.map((item): CheckoutItem => {
+  return value.map((item): RegisterOrderItem => {
     if (
       typeof item !== "object" ||
       item === null ||
