@@ -1,4 +1,3 @@
-import {MercadoPagoConfig, Order} from "mercadopago";
 import {
   MP_ACCESS_TOKEN_V2,
   MP_TIMEOUT_MS,
@@ -7,8 +6,90 @@ import {
 } from "../../core/utils/constants.js";
 import type {
   RegisterOrderInput,
+  RegisterOrderPayer,
   RegisteredOrder,
 } from "../models/register_order.js";
+
+export interface MercadoPagoOrder {
+  id: string;
+  external_reference?: string;
+  status?: string;
+  status_detail?: string;
+  items?: MercadoPagoOrderItem[];
+}
+
+interface MercadoPagoOrderItem {
+  external_code?: string;
+}
+
+interface CreateOrderRequest {
+  type: "online";
+  processing_mode: "manual";
+  capture_mode: "automatic_async";
+  total_amount: string;
+  currency: "MXN";
+  external_reference: string;
+  description: string;
+  payer?: {
+    email: string;
+    first_name?: string;
+    last_name?: string;
+    identification?: RegisterOrderPayer["identification"];
+    phone?: RegisterOrderPayer["phone"];
+    address?: RegisterOrderPayer["address"];
+  };
+  items: {
+    external_code: string;
+    title: string;
+    description?: string;
+    category_id?: string;
+    picture_url?: string;
+    quantity: number;
+    unit_price: string;
+    type?: string;
+    warranty?: boolean;
+    unit_measure?: string;
+  }[];
+  additional_info?: Record<string, unknown>;
+  shipment?: {
+    mode: "me2" | "custom" | "not_specified";
+    local_pickup?: boolean;
+    cost?: string;
+    free_shipping?: boolean;
+    address?: {
+      zip_code?: string;
+      street_name?: string;
+      street_number?: string;
+      floor?: string;
+      apartment?: string;
+      neighborhood?: string;
+      city?: string;
+      state?: string;
+      complement?: string;
+      country?: string;
+    };
+  };
+  integration_data?: {
+    integrator_id?: string;
+    platform_id?: string;
+    corporation_id?: string;
+  };
+  config: {
+    statement_descriptor: string;
+    online: {
+      callback_url: string;
+      success_url: string;
+      pending_url: string;
+      failure_url: string;
+      auto_return: "approved";
+    };
+    payment_method?: {
+      max_installments?: number;
+      not_allowed_ids?: string[];
+      not_allowed_types?: string[];
+    };
+  };
+}
 
 /**
  * Crea una orden de Checkout Pro mediante la Orders API.
@@ -64,92 +145,210 @@ export async function registerOrder(
     throw new TypeError("El monto de la orden debe ser mayor que cero.");
   }
 
-  const client = new MercadoPagoConfig({
-    accessToken: MP_ACCESS_TOKEN_V2.value(),
-    options: {timeout: MP_TIMEOUT_MS},
-  });
-  const order = new Order(client);
   const amount = (totalCents / 100).toFixed(2);
-  const result = await order.create({
-    body: {
-      type: "online",
-      processing_mode: "automatic",
-      capture_mode: "automatic",
-      total_amount: amount,
-      currency: "MXN",
-      external_reference: input.paymentUid,
-      description: "Compra en Champions Ring",
-      payer: input.payer && {
-        email: input.payer.email,
-        first_name: input.payer.firstName,
-        last_name: input.payer.lastName,
-        identification: input.payer.identification,
-        phone: input.payer.phone,
-        address: input.payer.address,
+  const body: CreateOrderRequest = {
+    type: "online",
+    processing_mode: "manual",
+    capture_mode: "automatic_async",
+    total_amount: amount,
+    currency: "MXN",
+    external_reference: input.paymentUid,
+    description: "Compra en Champions Ring",
+    payer: input.payer ? {
+      email: input.payer.email,
+      first_name: input.payer.firstName,
+      last_name: input.payer.lastName,
+      identification: input.payer.identification,
+      phone: input.payer.phone,
+      address: input.payer.address,
+    } : undefined,
+    items: input.items.map((item) => ({
+      external_code: item.productId,
+      title: item.title,
+      description: item.description,
+      category_id: item.categoryId,
+      picture_url: item.pictureUrl,
+      quantity: item.quantity,
+      unit_price: (Math.round(item.unitPrice * 100) / 100).toFixed(2),
+      type: item.type,
+      warranty: item.warranty,
+      unit_measure: item.unitMeasure,
+    })),
+    additional_info: input.additionalInfo,
+    shipment: input.shipment ? {
+      mode: input.shipment.mode,
+      local_pickup: input.shipment.localPickup,
+      cost: input.shipment.cost?.toFixed(2),
+      free_shipping: input.shipment.freeShipping,
+      address: input.shipment.address && {
+        zip_code: input.shipment.address.zipCode,
+        street_name: input.shipment.address.streetName,
+        street_number: input.shipment.address.streetNumber,
+        floor: input.shipment.address.floor,
+        apartment: input.shipment.address.apartment,
+        neighborhood: input.shipment.address.neighborhood,
+        city: input.shipment.address.city,
+        state: input.shipment.address.state,
+        complement: input.shipment.address.complement,
+        country: input.shipment.address.country,
       },
-      items: input.items.map((item) => ({
-        external_code: item.productId,
-        title: item.title,
-        description: item.description,
-        category_id: item.categoryId,
-        picture_url: item.pictureUrl,
-        quantity: item.quantity,
-        unit_price: (Math.round(item.unitPrice * 100) / 100).toFixed(2),
-        type: item.type,
-        warranty: item.warranty,
-        unit_measure: item.unitMeasure,
-      })),
-      additional_info: input.additionalInfo,
-      shipment: input.shipment && {
-        mode: input.shipment.mode,
-        local_pickup: input.shipment.localPickup,
-        cost: input.shipment.cost?.toFixed(2),
-        free_shipping: input.shipment.freeShipping,
-        address: input.shipment.address && {
-          zip_code: input.shipment.address.zipCode,
-          street_name: input.shipment.address.streetName,
-          street_number: input.shipment.address.streetNumber,
-          floor: input.shipment.address.floor,
-          apartment: input.shipment.address.apartment,
-          neighborhood: input.shipment.address.neighborhood,
-          city: input.shipment.address.city,
-          state: input.shipment.address.state,
-          complement: input.shipment.address.complement,
-          country: input.shipment.address.country,
-        },
+    } : undefined,
+    integration_data: input.integrationData ? {
+      integrator_id: input.integrationData.integratorId,
+      platform_id: input.integrationData.platformId,
+      corporation_id: input.integrationData.corporationId,
+    } : undefined,
+    config: {
+      statement_descriptor: "CHAMPIONS",
+      online: {
+        callback_url: NOTIFICATION_URL,
+        success_url: `${RETURN_URL}/success`,
+        pending_url: `${RETURN_URL}/pending`,
+        failure_url: `${RETURN_URL}/failure`,
+        auto_return: "approved",
       },
-      integration_data: input.integrationData && {
-        integrator_id: input.integrationData.integratorId,
-        platform_id: input.integrationData.platformId,
-        corporation_id: input.integrationData.corporationId,
-      },
-      config: {
-        statement_descriptor: "CHAMPIONS",
-        online: {
-          callback_url: NOTIFICATION_URL,
-          success_url: `${RETURN_URL}/success`,
-          pending_url: `${RETURN_URL}/pending`,
-          failure_url: `${RETURN_URL}/failure`,
-          auto_return: "approved",
-        },
-        payment_method: input.paymentMethod && {
-          max_installments: input.paymentMethod.maxInstallments,
-          not_allowed_ids: input.paymentMethod.notAllowedIds,
-          not_allowed_types: input.paymentMethod.notAllowedTypes,
-        },
+      payment_method: input.paymentMethod && {
+        max_installments: input.paymentMethod.maxInstallments,
+        not_allowed_ids: input.paymentMethod.notAllowedIds,
+        not_allowed_types: input.paymentMethod.notAllowedTypes,
       },
     },
-    requestOptions: {idempotencyKey: input.paymentUid},
-  });
+  };
+  const result = await mercadoPagoOrdersApi(
+    "/v1/orders",
+    {method: "POST", body, idempotencyKey: input.paymentUid},
+  );
 
+  const resultData = asRecord(result);
   if (
-    typeof result.id !== "string" ||
-    result.id === "" ||
-    typeof result.checkout_url !== "string" ||
-    result.checkout_url === ""
+    resultData === null ||
+    typeof resultData.id !== "string" ||
+    resultData.id === "" ||
+    typeof resultData.checkout_url !== "string" ||
+    resultData.checkout_url === ""
   ) {
     throw new Error("Mercado Pago no devolvió el ID y URL de la orden.");
   }
 
-  return {id: result.id, checkoutUrl: result.checkout_url};
+  return {id: resultData.id, checkoutUrl: resultData.checkout_url};
+}
+
+/**
+ * Recupera una orden de Checkout Pro mediante la Orders API.
+ * @param {string} orderId Identificador de la order.
+ * @return {Promise<MercadoPagoOrder>} Order recuperada.
+ */
+export async function recuperarOrder(
+  orderId: string,
+): Promise<MercadoPagoOrder> {
+  if (orderId.trim() === "" || orderId.includes("/")) {
+    throw new TypeError("El identificador de la order no es válido.");
+  }
+
+  const response = await mercadoPagoOrdersApi(
+    `/v1/orders/${encodeURIComponent(orderId)}`,
+  );
+  const responseData = asRecord(response);
+  if (responseData === null || typeof responseData.id !== "string") {
+    throw new Error("Mercado Pago devolvió una order no válida.");
+  }
+  if (responseData.id !== orderId) {
+    throw new Error("Mercado Pago no devolvió la order solicitada.");
+  }
+
+  return {
+    id: responseData.id,
+    external_reference: optionalString(responseData.external_reference),
+    status: optionalString(responseData.status),
+    status_detail: optionalString(responseData.status_detail),
+    items: parseOrderItems(responseData.items),
+  };
+}
+
+/**
+ * Ejecuta una solicitud autenticada a la Orders API.
+ * @param {string} path Ruta del endpoint de orders.
+ * @param {object} options Método, cuerpo e idempotencia de la solicitud.
+ * @return {Promise<unknown>} JSON devuelto por Mercado Pago.
+ */
+async function mercadoPagoOrdersApi(
+  path: string,
+  options: {
+    method?: "GET" | "POST";
+    body?: CreateOrderRequest;
+    idempotencyKey?: string;
+  } = {},
+): Promise<unknown> {
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${MP_ACCESS_TOKEN_V2.value()}`,
+  };
+  if (options.body !== undefined) {
+    headers["Content-Type"] = "application/json";
+  }
+  if (options.idempotencyKey !== undefined) {
+    headers["X-Idempotency-Key"] = options.idempotencyKey;
+  }
+
+  const response = await fetch(`https://api.mercadopago.com${path}`, {
+    method: options.method ?? "GET",
+    headers,
+    signal: AbortSignal.timeout(MP_TIMEOUT_MS),
+    body: options.body === undefined ? undefined : JSON.stringify(options.body),
+  });
+  if (!response.ok) {
+    throw new Error(
+      `Mercado Pago respondió con HTTP ${response.status} para Orders API.`,
+    );
+  }
+  const data: unknown = await response.json();
+  return data;
+}
+
+/**
+ * Comprueba que una respuesta JSON sea un objeto.
+ * @param {unknown} value Valor JSON recibido.
+ * @return {Record<string, unknown> | null} Objeto o null si no lo es.
+ */
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return null;
+  }
+  return value as Record<string, unknown>;
+}
+
+/**
+ * Valida un campo opcional de texto devuelto por Mercado Pago.
+ * @param {unknown} value Campo recibido.
+ * @return {string | undefined} Texto validado o undefined si no está presente.
+ */
+function optionalString(value: unknown): string | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value !== "string") {
+    throw new TypeError("Mercado Pago devolvió un campo de order no válido.");
+  }
+  return value;
+}
+
+/**
+ * Valida la lista de artículos de una order devuelta por Mercado Pago.
+ * @param {unknown} value Lista de artículos recibida.
+ * @return {Array<MercadoPagoOrderItem> | undefined} Artículos validados.
+ */
+function parseOrderItems(
+  value: unknown,
+): MercadoPagoOrderItem[] | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (!Array.isArray(value)) {
+    throw new TypeError(
+      "Mercado Pago devolvió una lista de artículos no válida.",
+    );
+  }
+
+  return value.map((item) => {
+    const itemData = asRecord(item);
+    if (itemData === null) {
+      throw new TypeError("Mercado Pago devolvió un artículo no válido.");
+    }
+    return {external_code: optionalString(itemData.external_code)};
+  });
 }

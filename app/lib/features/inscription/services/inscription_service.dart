@@ -19,7 +19,7 @@ import 'package:champions_ring_app/core/utils/result.dart';
 import 'package:champions_ring_app/features/inscription/models/member_inscription_data.dart';
 import 'package:champions_ring_app/features/inscription/models/payment.dart';
 import 'package:champions_ring_app/features/inscription/services/liability_waiver_pdf.dart';
-import 'package:champions_ring_app/shared/models/simple_item.dart';
+import 'package:champions_ring_app/shared/models/register_order_item.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -139,6 +139,7 @@ class InscriptionService {
       await CoreClientRepository()
           .upsert(coreClient)
           .timeout(const Duration(seconds: 15));
+      print("Client created");
 
       final storage = MemberStorageService(memberId: authenticatedUser.uid);
       final photoUrl = await _uploadUrl(
@@ -230,14 +231,14 @@ class InscriptionService {
             checkoutUrl =
                 await MercadoPagoCheckoutService.createPaymentCheckout(
                   [
-                    SimpleItem(
+                    RegisterOrderItem(
                       uid: "inscription",
                       productId: "inscription",
                       title: "Inscripción al gimnasio Champion's Ring",
                       quantity: 1,
                       unitPrice: INSCRIPTION_FEE as double,
                     ),
-                    SimpleItem(
+                    RegisterOrderItem(
                       uid: "membership-plan",
                       productId: selectedPlan.uid,
                       title: selectedPlan.name,
@@ -269,6 +270,8 @@ class InscriptionService {
               ),
             )
             .timeout(const Duration(seconds: 15));
+
+        print("La renovación se registró con éxito");
       }
       return Success(result: (uid, checkoutUrl));
     } on _UploadFailure catch (failure) {

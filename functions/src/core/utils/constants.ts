@@ -32,6 +32,7 @@ export const MEMBERSHIPS = {
 export type MembershipType = keyof typeof MEMBERSHIPS;
 
 export const REGISTRATION_FEE = 120;
+export const INSCRIPTION_PRODUCT_ID = "inscription";
 export const RECURRING_TYPES: readonly MembershipType[] = ["week", "month"];
 export const LIVE_SUBSCRIPTION_STATUSES: readonly string[] = [
   "authorized",

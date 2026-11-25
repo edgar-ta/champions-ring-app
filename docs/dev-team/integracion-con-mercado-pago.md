@@ -2,7 +2,7 @@
 
 El proyecto consta de dos integraciones, `Champions Ring Integration - Orders` y `Champions Ring Integration - Subscriptions`.
 
-**Versión 1.0.0**
+**Versión 2.0.0**
 
 ## Clasificación de Cambios
 
@@ -30,12 +30,14 @@ Todo nuevo protocolo debe ser asociado a una ID ascendente. Los protocolos no pu
 
 Asimismo, toda nueva plantilla debe ser asociada a una ID ascendente. Las plantillas no pueden reutilizar IDs menores o iguales a la ID más alta utilizada hasta el momento.
 
+Si el webhook recibe una notificación de un tipo no reconocido (esto es, que no está incluido en ninguna de las listas de tipos de notificaciones a procesar en las integraciones de esta especificación), se deberá retornar un estatus 501.
+
 ## Integración "Champions Ring Integration - Orders"
 
 **API utilizada:** Checkout Pro - Orders API
 
 **Tipos de notificaciones que debe procesar el webhook:**
-- `orders`
+- `order`
 
 ### Protocolos de Respuesta a los Eventos
 
@@ -54,14 +56,14 @@ type Plantilla1 = {
 
 **Acciones a Realizar:**
 
+- Recuperar el registro almacenado en el backend de Mercado Pago por medio del endpoint `GET /v1/orders/{id}` donde `id` es el identificador dado en el atributo `data.id` de la notificación recibida. A este registro se le conocerá como "order".
 - Obtener el documento en la colección `payments` cuya id coincide con el valor del atributo `external_reference` de la notificación recibida. A este documento se le conocerá como "pago".
-- Recuperar la order registrada en el backend de Mercado Pago por medio del endpoint `GET /v1/orders/{id}` donde `id` es el identificador de la order, el cual fue dado en el atributo `data.id` de la notificación recibida.
-- Si el estatus y detalle de estatus obtenidos en los atributos `data.status` y `data.status_detail` de la notificación, respectivamente, son los mismos que el estatus y detalle de estatus obtenidos en los atributos `status` y `status_detail` del resultado del endpoint, respectivamente, continuar con los pasos subsecuentes. Si no, proceder con las acciones correspondientes al estatus y detalle de estatus obtenidos en el resultado del endpoint.
+- Si el estatus y detalle de estatus obtenidos en los atributos `status` y `status_detail` de la order, respectivamente, coinciden con el patrón descrito en las plantillas de este protocolo, continuar con los pasos subsecuentes. Si no, proceder con las acciones correspondientes al estatus y detalle de estatus verdaderos de la order.
 - Guardar o reemplazar el valor del atributo `status` del pago con el valor `"approved"`.
 - Guardar en el atributo `approvalDate` del pago el valor de la fecha actual.
-- Si `renewalRef` está presente en el pago:
-  - Obtener el documento en la colección `members` cuya id coincide con la indicada al final de la ruta en el atributo `payerRef` del pago. Verificar que `payerRef` está presente en el pago, caso contrario, lanzar un error. Al documento obtenido se le conocerá como "miembro".
-  - Actualizar el atributo `latestRenewalRef` del miembro con el valor de `renewalRef` del pago.
+- Si la lista en el atributo `items` de la order incluye un objeto cuyo atributo `external_code` coincide con el valor de la constante `INSCRIPTION_PRODUCT_ID`:
+  - Crear una referencia hacia el documento en la colección `members` cuya id coincide con el último segmento de la URI almacenada en el atributo `payerRef` del pago. A este documento se le conocerá como "miembro".
+  - Reemplazar el valor del atributo `inscriptionPaid` del miembro con el valor `true`.
 - Responder con código 200.
 
 #### Protocolo 2: Order Pendiente
@@ -84,9 +86,9 @@ type Plantilla3 = {
 
 **Acciones a Realizar:**
 
+- Recuperar el registro almacenado en el backend de Mercado Pago por medio del endpoint `GET /v1/orders/{id}` donde `id` es el identificador dado en el atributo `data.id` de la notificación recibida. A este registro se le conocerá como "order".
 - Obtener el documento en la colección `payments` cuya id coincide con el valor del atributo `external_reference` de la notificación recibida. A este documento se le conocerá como "pago".
-- Recuperar la order registrada en el backend de Mercado Pago por medio del endpoint `GET /v1/orders/{id}` donde `id` es el identificador de la order, el cual fue dado en el atributo `data.id` de la notificación recibida.
-- Si el estatus y detalle de estatus obtenidos en los atributos `data.status` y `data.status_detail` de la notificación, respectivamente, son los mismos que el estatus y detalle de estatus obtenidos en los atributos `status` y `status_detail` del resultado del endpoint, respectivamente, continuar con los pasos subsecuentes. Si no, proceder con las acciones correspondientes al estatus y detalle de estatus obtenidos en el resultado del endpoint.
+- Si el estatus y detalle de estatus obtenidos en los atributos `status` y `status_detail` de la order, respectivamente, coinciden con el patrón descrito en las plantillas de este protocolo, continuar con los pasos subsecuentes. Si no, proceder con las acciones correspondientes al estatus y detalle de estatus verdaderos de la order.
 - Guardar o reemplazar el valor del atributo `status` del pago con el valor `"processing"`.
 - Responder con código 200.
 
@@ -110,9 +112,9 @@ type Plantilla5 = {
 
 **Acciones a Realizar:**
 
+- Recuperar el registro almacenado en el backend de Mercado Pago por medio del endpoint `GET /v1/orders/{id}` donde `id` es el identificador dado en el atributo `data.id` de la notificación recibida. A este registro se le conocerá como "order".
 - Obtener el documento en la colección `payments` cuya id coincide con el valor del atributo `external_reference` de la notificación recibida. A este documento se le conocerá como "pago".
-- Recuperar la order registrada en el backend de Mercado Pago por medio del endpoint `GET /v1/orders/{id}` donde `id` es el identificador de la order, el cual fue dado en el atributo `data.id` de la notificación recibida.
-- Si el estatus y detalle de estatus obtenidos en los atributos `data.status` y `data.status_detail` de la notificación, respectivamente, son los mismos que el estatus y detalle de estatus obtenidos en los atributos `status` y `status_detail` del resultado del endpoint, respectivamente, continuar con los pasos subsecuentes. Si no, proceder con las acciones correspondientes al estatus y detalle de estatus obtenidos en el resultado del endpoint.
+- Si el estatus y detalle de estatus obtenidos en los atributos `status` y `status_detail` de la order, respectivamente, coinciden con el patrón descrito en las plantillas de este protocolo, continuar con los pasos subsecuentes. Si no, proceder con las acciones correspondientes al estatus y detalle de estatus verdaderos de la order.
 - Reemplazar el valor del atributo `status` del pago con el valor `"refunded"`.
 - Responder con código 200.
 
@@ -131,11 +133,11 @@ type Plantilla6 = {
 
 **Acciones a Realizar:**
 
+- Recuperar el registro almacenado en el backend de Mercado Pago por medio del endpoint `GET /v1/orders/{id}` donde `id` es el identificador dado en el atributo `data.id` de la notificación recibida. A este registro se le conocerá como "order".
 - Obtener el documento en la colección `payments` cuya id coincide con el valor del atributo `external_reference` de la notificación recibida. A este documento se le conocerá como "pago".
-- Recuperar la order registrada en el backend de Mercado Pago por medio del endpoint `GET /v1/orders/{id}` donde `id` es el identificador de la order, el cual fue dado en el atributo `data.id` de la notificación recibida.
-- Si el estatus y detalle de estatus obtenidos en los atributos `data.status` y `data.status_detail` de la notificación, respectivamente, son los mismos que el estatus y detalle de estatus obtenidos en los atributos `status` y `status_detail` del resultado del endpoint, respectivamente, continuar con los pasos subsecuentes. Si no, proceder con las acciones correspondientes al estatus y detalle de estatus obtenidos en el resultado del endpoint.
+- Si el estatus y detalle de estatus obtenidos en los atributos `status` y `status_detail` de la order, respectivamente, coinciden con el patrón descrito en las plantillas de este protocolo, continuar con los pasos subsecuentes. Si no, proceder con las acciones correspondientes al estatus y detalle de estatus verdaderos de la order.
 - Reemplazar el valor del atributo `status` del pago con el valor `"rejected"`.
-- Guardar en el atributo `rejectionDetail` del pago el valor del atributo `status_detail` de la notificación recibida.
+- Guardar en el atributo `rejectionDetail` del pago el valor del atributo `status_detail` de la order.
 - Responder con código 200.
 
 #### Protocolo 5: Order Cancelada
@@ -153,9 +155,9 @@ type Plantilla7 = {
 
 **Acciones a Realizar:**
 
+- Recuperar el registro almacenado en el backend de Mercado Pago por medio del endpoint `GET /v1/orders/{id}` donde `id` es el identificador dado en el atributo `data.id` de la notificación recibida. A este registro se le conocerá como "order".
 - Obtener el documento en la colección `payments` cuya id coincide con el valor del atributo `external_reference` de la notificación recibida. A este documento se le conocerá como "pago".
-- Recuperar la order registrada en el backend de Mercado Pago por medio del endpoint `GET /v1/orders/{id}` donde `id` es el identificador de la order, el cual fue dado en el atributo `data.id` de la notificación recibida.
-- Si el estatus y detalle de estatus obtenidos en los atributos `data.status` y `data.status_detail` de la notificación, respectivamente, son los mismos que el estatus y detalle de estatus obtenidos en los atributos `status` y `status_detail` del resultado del endpoint, respectivamente, continuar con los pasos subsecuentes. Si no, proceder con las acciones correspondientes al estatus y detalle de estatus obtenidos en el resultado del endpoint.
+- Si el estatus y detalle de estatus obtenidos en los atributos `status` y `status_detail` de la order, respectivamente, coinciden con el patrón descrito en las plantillas de este protocolo, continuar con los pasos subsecuentes. Si no, proceder con las acciones correspondientes al estatus y detalle de estatus verdaderos de la order.
 - Reemplazar el valor del atributo `status` del pago con el valor `"canceled"`.
 - Responder con código 200.
 

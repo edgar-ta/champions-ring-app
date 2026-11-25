@@ -2,7 +2,10 @@ import type {
   DocumentData,
   Firestore,
 } from "firebase-admin/firestore";
-import {CorePayment} from "../models/core_payment.js";
+import {
+  CorePayment,
+  type CorePaymentStatus,
+} from "../models/core_payment.js";
 import {BaseRepository} from "../utils/base_repository.js";
 
 /** Repositorio de pagos. */
@@ -79,6 +82,23 @@ export class CorePaymentRepository extends BaseRepository<CorePayment> {
         this.dataForUpsert(payment, paymentSnapshot.data())
       );
       return !paymentSnapshot.exists;
+    });
+  }
+
+  /**
+   * Actualiza el estado de un pago existente.
+   * @param {string} uid Identificador del pago.
+   * @param {CorePaymentStatus} status Nuevo estado del pago.
+   * @return {Promise<void>} Se resuelve al guardar el estado.
+   */
+  async updateStatus(uid: string, status: CorePaymentStatus): Promise<void> {
+    const paymentDocument = this.collection.doc(uid);
+    await this.firestore.runTransaction(async (transaction) => {
+      const paymentSnapshot = await transaction.get(paymentDocument);
+      if (!paymentSnapshot.exists) {
+        throw new Error(`El pago "${uid}" no existe.`);
+      }
+      transaction.update(paymentDocument, {status});
     });
   }
 }

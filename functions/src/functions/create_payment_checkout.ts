@@ -1,4 +1,5 @@
 import type {DocumentReference} from "firebase-admin/firestore";
+import {FieldValue} from "firebase-admin/firestore";
 import {logger} from "firebase-functions";
 import {HttpsError, onCall} from "firebase-functions/v2/https";
 import {CoreDate} from "../core/models/core_date.js";
@@ -123,7 +124,7 @@ export const createPaymentCheckout = onCall(
       }
 
       if (
-        existingPayment.status === "pending" &&
+        existingPayment.status === "processing" &&
         existingPayment.checkoutUrl
       ) {
         const creationDate =
@@ -143,8 +144,8 @@ export const createPaymentCheckout = onCall(
       }
 
       if (
-        existingPayment.status !== "checkout_creation_failed" &&
-        existingPayment.status !== "pending"
+        existingPayment.status !== undefined &&
+        existingPayment.status !== "processing"
       ) {
         throw new HttpsError(
           "already-exists",
@@ -159,8 +160,7 @@ export const createPaymentCheckout = onCall(
       currency: "MXN",
       creationDate: CoreDate.ofWriteTime(),
       payerRef,
-      checkoutUrl: "",
-      status: "pending",
+      status: "processing",
     });
 
     await paymentRepository.upsert(payment.toCorePayment());
@@ -175,25 +175,18 @@ export const createPaymentCheckout = onCall(
       });
     } catch (error) {
       logger.error("No se pudo contactar a Mercado Pago", error);
-      await paymentRepository.upsert(
-        payment
-          .copyWith({status: "checkout_creation_failed"})
-          .toCorePayment(),
-      );
+      await paymentRepository.collection.doc(paymentUid).update({
+        status: FieldValue.delete(),
+      });
       throw new HttpsError(
         "unavailable",
         "No fue posible conectar con Mercado Pago. Intenta de nuevo.",
       );
     }
 
-    await paymentRepository.upsert(
-      payment
-        .copyWith({
-          checkoutUrl: order.checkoutUrl,
-          orderId: order.id,
-        })
-        .toCorePayment(),
-    );
+    await paymentRepository.collection.doc(paymentUid).update({
+      checkoutUrl: order.checkoutUrl,
+    });
 
     return {checkoutUrl: order.checkoutUrl};
   },

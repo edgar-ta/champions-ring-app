@@ -17,9 +17,10 @@ type PaymentData = {
 };
 
 type MercadoPagoPaymentData = {
-  checkoutUrl: string;
-  status: CorePaymentStatus;
-  orderId?: string;
+  checkoutUrl?: string;
+  status?: CorePaymentStatus;
+  preferenceId?: string;
+  rejectionDetail?: string;
 };
 
 type PaymentCopyWith = Partial<PaymentData & MercadoPagoPaymentData>;
@@ -56,9 +57,10 @@ export abstract class Payment {
 
 /** Pago de Mercado Pago con URL de checkout e ID de orden. */
 export class MercadoPagoPayment extends Payment {
-  readonly checkoutUrl: string;
-  readonly status: CorePaymentStatus;
-  readonly orderId?: string;
+  readonly checkoutUrl?: string;
+  readonly status?: CorePaymentStatus;
+  readonly preferenceId?: string;
+  readonly rejectionDetail?: string;
 
   /**
    * Crea un pago de Mercado Pago.
@@ -68,7 +70,8 @@ export class MercadoPagoPayment extends Payment {
     super(data);
     this.checkoutUrl = data.checkoutUrl;
     this.status = data.status;
-    this.orderId = data.orderId;
+    this.preferenceId = data.preferenceId;
+    this.rejectionDetail = data.rejectionDetail;
   }
 
   /**
@@ -87,7 +90,8 @@ export class MercadoPagoPayment extends Payment {
       payerRef: data.payerRef ?? this.payerRef,
       checkoutUrl: data.checkoutUrl ?? this.checkoutUrl,
       status: data.status ?? this.status,
-      orderId: data.orderId ?? this.orderId,
+      preferenceId: data.preferenceId ?? this.preferenceId,
+      rejectionDetail: data.rejectionDetail ?? this.rejectionDetail,
     });
   }
 
@@ -106,12 +110,8 @@ export class MercadoPagoPayment extends Payment {
       this.payerRef,
       this.checkoutUrl,
       this.status,
-      undefined,
-      this.orderId,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
+      this.preferenceId,
+      this.rejectionDetail,
       undefined,
       undefined,
       undefined,

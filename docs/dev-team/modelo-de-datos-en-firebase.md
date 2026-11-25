@@ -1,6 +1,6 @@
 # Modelo de Datos en Firebase
 
-Versión 22.0.0
+Versión 22.1.0
 
 ## Clasificación de Cambios
 - Cambios mayores
@@ -15,6 +15,7 @@ Versión 22.0.0
   - Eliminar atributos nulables 
   - Renombrar atributos nulables
   - Cambiar el tipo de dato de un atributo nulable
+    - Por ejemplo, al añadir un valor a una enumeración de un atributo nulable
 
 - Parches
   - Cambiar el tipo de dato de un atributo no nulable de forma equivalente (ej. double en vez de int)
@@ -97,6 +98,8 @@ membership_plans
     cost: double
     benefits: string
     duration: "1d" | "1w" | "1m"
+    name: string
+    isRenewable: boolean
 
     creationDate: timestamp
     deletionDate?: timestamp
@@ -109,19 +112,12 @@ payments
     currency: "MXN" | "USD"
     approvalDate?: timestamp
     payerRef?: ref
-    renewalRef?: ref
 
     -- mercado-pago only
     checkoutUrl?: string
-    status?: "approved" | "rejected" | "processing" | "refunded"
+    status?: "approved" | "rejected" | "processing" | "canceled" | "refunded"
     preferenceId?: string
     rejectionDetail?: "high_risk" | "rejected_by_issuer" | "insufficient_amount" | "invalid_card_token" | "processing_error" | string
-
-    // Cobro automático (solo lo escriben las Cloud Functions)
-    subscription_id?: string // documento en subscriptions
-    subscription_status?: "pending" | "authorized" | "paused" | "cancelled"
-    subscription_membership_type?: "week" | "month"
-    subscription_next_payment_at?: timestamp
 
     -- direct-transfer only
     referenceId?: string
@@ -133,19 +129,6 @@ payments
 
     creationDate: timestamp
     deletionDate?: timestamp
-
-subscriptions // una por cada autorización de cobro automático
-    uid: string
-    membershipType: "week" | "month"
-    membershipPlanId: number
-    amount: number
-    currency: "MXN"
-    frequencyDays: number
-    status: "creating" | "creation_failed" | "pending" | "authorized" | "paused" | "cancelled"
-    preapprovalId: string // id de la suscripción en Mercado Pago
-    checkoutUrl: string
-    nextPaymentAt?: timestamp
-    createdAt: timestamp
 
 purchases
     uid: string

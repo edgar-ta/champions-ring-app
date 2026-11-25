@@ -1,5 +1,5 @@
-class SimpleItem {
-  const SimpleItem({
+class RegisterOrderItem {
+  const RegisterOrderItem({
     required this.uid,
     required this.productId,
     required this.title,

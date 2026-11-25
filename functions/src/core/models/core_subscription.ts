@@ -2,10 +2,6 @@ import type {DocumentData} from "firebase-admin/firestore";
 import {CoreDate} from "./core_date.js";
 import {FirestoreEntity} from "../utils/firestore_entity.js";
 import {
-  CORE_SUBSCRIPTION_MEMBERSHIP_TYPES,
-  type CoreSubscriptionMembershipType,
-} from "./core_payment.js";
-import {
   readDate,
   readEnum,
   readNumber,
@@ -13,6 +9,11 @@ import {
   readOptionalString,
   readUid,
 } from "../utils/firestore_values.js";
+
+/** Duraciones de membresía permitidas para pagos recurrentes. */
+export const CORE_SUBSCRIPTION_MEMBERSHIP_TYPES = ["week", "month"] as const;
+export type CoreSubscriptionMembershipType =
+  typeof CORE_SUBSCRIPTION_MEMBERSHIP_TYPES[number];
 
 /** Estados admitidos para una suscripción recurrente. */
 export const CORE_SUBSCRIPTION_STATUSES = [

@@ -1,5 +1,5 @@
 import 'package:cloud_functions/cloud_functions.dart';
-import 'package:champions_ring_app/shared/models/simple_item.dart';
+import 'package:champions_ring_app/shared/models/register_order_item.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Crea el checkout en el servidor (createMembershipCheckout) y lo abre
@@ -16,7 +16,7 @@ class MercadoPagoCheckoutService {
 
   /// Crea un checkout para los artículos y devuelve su URL.
   static Future<String> createPaymentCheckout(
-    List<SimpleItem> simpleItems, {
+    List<RegisterOrderItem> simpleItems, {
     required String paymentUid,
     String? clientUid,
   }) async {

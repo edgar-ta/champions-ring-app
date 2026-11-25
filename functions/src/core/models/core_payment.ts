@@ -28,17 +28,11 @@ export type CorePaymentCurrency = typeof CORE_PAYMENT_CURRENCIES[number];
 
 /** Estados de pago usados por la aplicación y las funciones de Mercado Pago. */
 export const CORE_PAYMENT_STATUSES = [
-  "pending",
   "approved",
   "rejected",
-  "checkout_creation_failed",
-  "authorized",
-  "in_process",
-  "in_mediation",
-  "cancelled",
+  "processing",
+  "canceled",
   "refunded",
-  "charged_back",
-  "expired",
 ] as const;
 export type CorePaymentStatus = typeof CORE_PAYMENT_STATUSES[number];
 
@@ -52,19 +46,6 @@ export const CORE_PAYMENT_ISSUING_ENTITIES = [
 ] as const;
 export type CorePaymentIssuingEntity =
   typeof CORE_PAYMENT_ISSUING_ENTITIES[number];
-
-/** Duraciones de membresía permitidas para pagos recurrentes. */
-export const CORE_SUBSCRIPTION_MEMBERSHIP_TYPES = ["week", "month"] as const;
-export type CoreSubscriptionMembershipType =
-  typeof CORE_SUBSCRIPTION_MEMBERSHIP_TYPES[number];
-export const CORE_PAYMENT_SUBSCRIPTION_STATUSES = [
-  "pending",
-  "authorized",
-  "paused",
-  "cancelled",
-] as const;
-export type CorePaymentSubscriptionStatus =
-  typeof CORE_PAYMENT_SUBSCRIPTION_STATUSES[number];
 
 /** Documento de pago que cumple el esquema de la colección payments. */
 export class CorePayment extends FirestoreEntity {
@@ -80,11 +61,7 @@ export class CorePayment extends FirestoreEntity {
     readonly checkoutUrl?: string,
     readonly status?: CorePaymentStatus,
     readonly preferenceId?: string,
-    readonly orderId?: string,
-    readonly subscriptionId?: string,
-    readonly subscriptionStatus?: CorePaymentSubscriptionStatus,
-    readonly subscriptionMembershipType?: CoreSubscriptionMembershipType,
-    readonly subscriptionNextPaymentAt?: CoreDate,
+    readonly rejectionDetail?: string,
     readonly referenceId?: string,
     readonly issuingEntity?: CorePaymentIssuingEntity,
     readonly issuingEntityName?: string,
@@ -117,19 +94,8 @@ export class CorePayment extends FirestoreEntity {
       ...(this.preferenceId !== undefined ?
         {preferenceId: this.preferenceId} :
         {}),
-      ...(this.orderId !== undefined ? {orderId: this.orderId} : {}),
-      ...(this.subscriptionId !== undefined ?
-        {subscription_id: this.subscriptionId} :
-        {}),
-      ...(this.subscriptionStatus !== undefined ?
-        {subscription_status: this.subscriptionStatus} :
-        {}),
-      ...(this.subscriptionMembershipType !== undefined ?
-        {subscription_membership_type: this.subscriptionMembershipType} :
-        {}),
-      ...(this.subscriptionNextPaymentAt ?
-        {subscription_next_payment_at:
-          this.subscriptionNextPaymentAt.toFirebaseValue()} :
+      ...(this.rejectionDetail !== undefined ?
+        {rejectionDetail: this.rejectionDetail} :
         {}),
       ...(this.referenceId !== undefined ?
         {referenceId: this.referenceId} :
@@ -166,15 +132,7 @@ export class CorePayment extends FirestoreEntity {
       readOptionalString(data, "checkoutUrl"),
       readOptionalPaymentStatus(data),
       readOptionalString(data, "preferenceId"),
-      readOptionalString(data, "orderId"),
-      readOptionalString(data, "subscription_id", "subscriptionId"),
-      readOptionalSubscriptionStatus(data),
-      readOptionalSubscriptionType(data),
-      readOptionalDate(
-        data,
-        "subscription_next_payment_at",
-        "subscriptionNextPaymentAt"
-      ),
+      readOptionalString(data, "rejectionDetail"),
       readOptionalString(data, "referenceId"),
       readOptionalIssuingEntity(data),
       readOptionalString(data, "issuingEntityName"),
@@ -208,61 +166,21 @@ function readPaymentType(data: DocumentData): CorePaymentType {
 function readOptionalPaymentStatus(
   data: DocumentData
 ): CorePaymentStatus | undefined {
-  if (
-    (data.status === undefined || data.status === null) &&
-    (data.mercadoPagoStatus === undefined || data.mercadoPagoStatus === null)
-  ) {
+  const status = data.status ?? data.mercadoPagoStatus;
+  if (status === undefined || status === null) {
     return undefined;
+  }
+  if (status === "pending" || status === "authorized" ||
+    status === "in_process") {
+    return "processing";
+  }
+  if (status === "checkout_creation_failed") {
+    return undefined;
+  }
+  if (status === "cancelled") {
+    return "canceled";
   }
   return readEnum(data, "status", CORE_PAYMENT_STATUSES, "mercadoPagoStatus");
-}
-
-/**
- * Lee el tipo de membresía recurrente del campo actual o del heredado.
- * @param {DocumentData} data Datos del documento de Firestore.
- * @return {CoreSubscriptionMembershipType | undefined} Tipo de membresía.
- */
-function readOptionalSubscriptionType(
-  data: DocumentData
-): CoreSubscriptionMembershipType | undefined {
-  if (
-    (data.subscription_membership_type === undefined ||
-      data.subscription_membership_type === null) &&
-    (data.subscriptionMembershipType === undefined ||
-      data.subscriptionMembershipType === null)
-  ) {
-    return undefined;
-  }
-  return readEnum(
-    data,
-    "subscription_membership_type",
-    CORE_SUBSCRIPTION_MEMBERSHIP_TYPES,
-    "subscriptionMembershipType"
-  );
-}
-
-/**
- * Lee el estado del pago recurrente del campo actual o del heredado.
- * @param {DocumentData} data Datos del documento de Firestore.
- * @return {CorePaymentSubscriptionStatus | undefined} Estado, si está presente.
- */
-function readOptionalSubscriptionStatus(
-  data: DocumentData
-): CorePaymentSubscriptionStatus | undefined {
-  if (
-    (data.subscription_status === undefined ||
-      data.subscription_status === null) &&
-    (data.subscriptionStatus === undefined ||
-      data.subscriptionStatus === null)
-  ) {
-    return undefined;
-  }
-  return readEnum(
-    data,
-    "subscription_status",
-    CORE_PAYMENT_SUBSCRIPTION_STATUSES,
-    "subscriptionStatus"
-  );
 }
 
 /**
