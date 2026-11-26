@@ -8,7 +8,9 @@ import { getFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
+// Se exporta para crear instancias secundarias (p. ej. crear la cuenta de un alumno
+// sin cerrar la sesión de la recepcionista). Esta configuración es pública por diseño.
+export const firebaseConfig = {
   apiKey: "AIzaSyDH6V1XK8fS19oJZmzcDWuumEXLpWSOPkY",
   authDomain: "champions-ring-app.firebaseapp.com",
   projectId: "champions-ring-app",
@@ -19,6 +21,8 @@ const firebaseConfig = {
 };
 
 // Reuse the app during Next.js hot reloads. Analytics is not needed for login.
-export const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+// Se busca la app por defecto por nombre: puede haber instancias secundarias abiertas.
+export const app = getApps().some(existing => existing.name === "[DEFAULT]") ? getApp() : initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app, "default");
+export const DATABASE_ID = "default";
+export const db = getFirestore(app, DATABASE_ID);

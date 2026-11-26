@@ -38,9 +38,11 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 ## Inicio de sesión de recepcionistas
 
 La web autentica por correo y contraseña con Firebase Authentication y consulta
-`users/{uid}` en la base de Firestore `default` (sin paréntesis). La cuenta debe existir en Authentication, tener el
-mismo `uid` en su documento, `type: "receptionist"` y `deletion_date` ausente o
-`null`. No se crean cuentas ni documentos durante el inicio de sesión.
+`receptionists/{uid}` en la base de Firestore `default` (sin paréntesis), según el
+Modelo de Datos en Firebase v20.0.0. La cuenta debe existir en Authentication, tener
+un documento en `receptionists` con el mismo `uid` (también dentro del documento) y
+`deletionDate` ausente o `null`. No se crean cuentas ni documentos durante el inicio
+de sesión.
 
 Habilita Email/Password en Firebase Authentication y autoriza el dominio de la
 web. Las reglas de Firestore deben permitir al usuario autenticado leer su propio

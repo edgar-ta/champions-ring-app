@@ -1,26 +1,29 @@
 "use client";
 
 import { DashboardSidebar } from "../components/dashboard-sidebar";
-import { useEffect, useState, type FormEvent } from "react";
+import { useReceptionist } from "../features/authentication/components/receptionist-session";
+import { useState, type FormEvent } from "react";
 
-const initial = { name: "Jose Hernandez", address: "Av. Rebeldes de la Revolución 402, Col. San Ángel", phone: "55-1234-5678", email: "contacto@championsring.com", hours: "Lunes a Viernes: 6:00 AM - 10:00 PM", emailNotifications: true, overdueAlerts: true, dailySummary: false };
+// Ajustes del gimnasio guardados en este navegador. Los datos del recepcionista vienen de receptionists/{uid}.
+const initial = { address: "Av. Rebeldes de la Revolución 402, Col. San Ángel", phone: "55-1234-5678", email: "contacto@championsring.com", hours: "Lunes a Viernes: 6:00 AM - 10:00 PM", emailNotifications: true, overdueAlerts: true, dailySummary: false };
 type Settings = typeof initial;
 const storageKey = "champions-ring-settings-v1";
 
+// Esta pantalla solo se monta en el navegador (dentro de <ReceptionistGate>), así que puede leer localStorage al iniciar.
+function loadSettings(): { settings: Settings; failed: boolean } {
+  try {
+    const saved = JSON.parse(localStorage.getItem(storageKey) || "null");
+    if (!saved || typeof saved !== "object") return { settings: initial, failed: false };
+    return { settings: Object.fromEntries(Object.entries(initial).map(([key, value]) => [key, typeof saved[key] === typeof value ? saved[key] : value])) as Settings, failed: false };
+  } catch { return { settings: initial, failed: true }; }
+}
+
 export function SettingsScreen() {
-  const [settings, setSettings] = useState<Settings>(initial);
-  const [notice, setNotice] = useState("");
-  const [ready, setReady] = useState(false);
+  const receptionist = useReceptionist();
+  const [loaded] = useState(loadSettings);
+  const [settings, setSettings] = useState<Settings>(loaded.settings);
+  const [notice, setNotice] = useState(loaded.failed ? "No se pudieron cargar los ajustes guardados." : "");
   const [busy, setBusy] = useState(false);
-  useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(storageKey) || "null");
-      if (saved && typeof saved === "object") {
-        setSettings(Object.fromEntries(Object.entries(initial).map(([key, value]) => [key, typeof saved[key] === typeof value ? saved[key] : value])) as Settings);
-      }
-    } catch { setNotice("No se pudieron cargar los ajustes guardados."); }
-    setReady(true);
-  }, []);
 
   function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -31,7 +34,7 @@ export function SettingsScreen() {
   async function resetPassword() {
     setBusy(true);
     try {
-      const [{ auth }, { sendPasswordResetEmail }] = await Promise.all([import("../core/firebase/firebase"), import("firebase/auth")]);
+      const [{ auth }, { sendPasswordResetEmail }] = await Promise.all([import("@/app/core/firebase/firebase"), import("firebase/auth")]);
       if (!auth.currentUser?.email) { setNotice("Inicia sesión para solicitar el cambio de contraseña."); return; }
       await sendPasswordResetEmail(auth, auth.currentUser.email);
       setNotice("Enviamos un enlace para cambiar tu contraseña al correo de tu cuenta.");
@@ -40,14 +43,17 @@ export function SettingsScreen() {
   }
 
   return <div className="settings-app">
-    <DashboardSidebar active={9} onNotice={setNotice}/>
+    <DashboardSidebar onNotice={setNotice}/>
     <form className="settings-main" onSubmit={save}>
-      <header className="settings-header"><div><h1>Configuración</h1><p>Ajustes generales del sistema y preferencias del gimnasio.</p></div><button className="settings-save" disabled={!ready} type="submit">Guardar cambios</button></header>
+      <header className="settings-header"><div><h1>Configuración</h1><p>Ajustes generales del sistema y preferencias del gimnasio.</p></div><button className="settings-save" type="submit">Guardar cambios</button></header>
       <div className="settings-content">
         {notice && <div className="settings-notice" role="status" aria-live="polite">{notice}<button type="button" aria-label="Descartar mensaje" onClick={() => setNotice("")}>×</button></div>}
         <div className="settings-grid">
           <section className="settings-panel"><h2>Información del Usuario</h2><div className="settings-fields">
-            {([["name", "Nombre del Recepcionista", "text", true], ["address", "Dirección", "text", true], ["phone", "Teléfono", "tel", true], ["email", "Correo de contacto", "email", true], ["hours", "Horario de operación", "text", false]] as const).map(([key, label, type, required]) => <div key={key} className={`settings-field ${key === "phone" || key === "email" ? "half" : ""}`}><label htmlFor={`settings-${key}`}>{label}{required && <span> *</span>}</label><input id={`settings-${key}`} type={type} required={required} value={settings[key]} onChange={event => setSettings({ ...settings, [key]: event.target.value })}/></div>)}
+            <div className="settings-field half"><label htmlFor="settings-receptionist-name">Nombre del Recepcionista</label><input id="settings-receptionist-name" type="text" readOnly value={`${receptionist.name} ${receptionist.lastName}`.trim()} aria-describedby="settings-profile-note"/></div>
+            <div className="settings-field half"><label htmlFor="settings-receptionist-email">Correo de la cuenta</label><input id="settings-receptionist-email" type="email" readOnly value={receptionist.email} aria-describedby="settings-profile-note"/></div>
+            <p id="settings-profile-note" className="settings-profile-note">Tu nombre y correo vienen de tu perfil de recepcionista. Para cambiarlos, contacta al administrador.</p>
+            {([["address", "Dirección", "text", true], ["phone", "Teléfono", "tel", true], ["email", "Correo de contacto", "email", true], ["hours", "Horario de operación", "text", false]] as const).map(([key, label, type, required]) => <div key={key} className={`settings-field ${key === "phone" || key === "email" ? "half" : ""}`}><label htmlFor={`settings-${key}`}>{label}{required && <span> *</span>}</label><input id={`settings-${key}`} type={type} required={required} value={settings[key]} onChange={event => setSettings({ ...settings, [key]: event.target.value })}/></div>)}
           </div></section>
           <div className="settings-right"><section className="settings-panel"><h2>Notificaciones</h2>
             {([["emailNotifications", "Notificaciones por email", "Enviar alertas y recibos automáticamente a los alumnos."], ["overdueAlerts", "Alertas de pagos vencidos", "Notificar de inmediato a administración sobre accesos denegados por adeudo."], ["dailySummary", "Resumen diario", "Recibir un reporte matutino con la asistencia y ventas del día anterior."]] as const).map(([key, title, description]) => <div className="settings-notification" key={key}><div><label htmlFor={key}>{title}</label><p id={`${key}-description`}>{description}</p></div><input className="settings-switch" id={key} type="checkbox" role="switch" aria-describedby={`${key}-description`} checked={settings[key]} onChange={event => setSettings({ ...settings, [key]: event.target.checked })}/></div>)}
