@@ -7,15 +7,17 @@ import {
   MP_WEBHOOK_SECRET_V2,
   REGION,
 } from "../../core/utils/constants.js";
-import type {MercadoPagoOrder} from "../../shared/utils/register_order.js";
+import type {
+  MercadoPagoOrder,
+  OrderHandler,
+} from "../../shared/models/register_order.js";
 import {recuperarOrder} from "../../shared/utils/register_order.js";
-import {firstValue} from "../../shared/utils/shared.js";
+import {asRecord, firstValue} from "../../shared/utils/shared.js";
 import {handlerOrderAprobada} from "./handler_order_aprobada.js";
 import {handlerOrderCancelada} from "./handler_order_cancelada.js";
 import {handlerOrderPendiente} from "./handler_order_pendiente.js";
 import {handlerOrderRechazada} from "./handler_order_rechazada.js";
 import {handlerOrderReembolsada} from "./handler_order_reembolsada.js";
-import type {OrderHandler} from "./shared.js";
 
 interface MercadoPagoNotification {
   type?: unknown;
@@ -154,17 +156,6 @@ function obtenerHandler(
     break;
   }
   return undefined;
-}
-
-/**
- * Comprueba que un valor sea un objeto con propiedades indexables.
- * @param {unknown} value Valor que se comprobará.
- * @return {Record<string, unknown> | null} Objeto o null.
- */
-function asRecord(value: unknown): Record<string, unknown> | null {
-  return typeof value === "object" && value !== null && !Array.isArray(value) ?
-    value as Record<string, unknown> :
-    null;
 }
 
 /**

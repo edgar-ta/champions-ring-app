@@ -1,5 +1,6 @@
 export {checkEmailAvailable} from "./functions/check_email_available.js";
 export {createPaymentCheckout} from "./functions/create_payment_checkout.js";
+export {addRenewalEndDate} from "./functions/add_renewal_end_date.js";
 export {
   paymentReturn,
 } from "./functions/payment_return.js";

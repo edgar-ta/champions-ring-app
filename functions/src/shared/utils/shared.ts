@@ -1,121 +1,26 @@
-import {FieldValue, Timestamp} from "firebase-admin/firestore";
-import {
-  DAY_MS,
-  MEMBERSHIPS,
-  MP_ACCESS_TOKEN,
-  MP_TIMEOUT_MS,
-  type MembershipType,
-} from "../../core/utils/constants.js";
-
-export interface MercadoPagoPreapproval {
-  id?: string;
-  status?: string;
-  external_reference?: string;
-  next_payment_date?: string;
-  init_point?: string;
-  sandbox_init_point?: string;
-  message?: string;
-  code?: string;
-}
-
-export interface MercadoPagoAuthorizedPayment {
-  id?: number | string;
-  preapproval_id?: string;
-  transaction_amount?: number;
-  currency_id?: string;
-  status?: string;
-  payment?: {id?: number | string; status?: string};
-}
-
 /**
- * Indica si el valor recibido es un tipo de membresía válido.
- *
- * @param {unknown} value Valor enviado por el cliente.
- * @return {boolean} true si existe en MEMBERSHIPS.
+ * Comprueba que un valor sea un objeto JSON.
+ * @param {unknown} value Valor recibido.
+ * @return {Record<string, unknown> | null} Objeto o null si no lo es.
  */
-export function isMembershipType(value: unknown): value is MembershipType {
-  return (
-    typeof value === "string" &&
-    Object.prototype.hasOwnProperty.call(MEMBERSHIPS, value)
-  );
-}
-
-/**
- * Calcula los campos del usuario que activan o extienden su membresía.
- *
- * @param {MembershipType} type Tipo de membresía pagada.
- * @param {unknown} currentExpiry Valor actual de membership_expires_at.
- * @return {Record<string, unknown>} Campos para actualizar users/{uid}.
- */
-export function membershipActivation(
-  type: MembershipType,
-  currentExpiry: unknown,
-): Record<string, unknown> {
-  const membership = MEMBERSHIPS[type];
-  const oldExpiry =
-    currentExpiry instanceof Timestamp ? currentExpiry.toMillis() : 0;
-
-  // Si la membresía sigue vigente se extiende desde su vencimiento;
-  // si ya venció, comienza desde el momento del pago.
-  const base = Math.max(Date.now(), oldExpiry);
-
-  return {
-    membership_plan_id: membership.planId,
-    membership_type: type,
-    membership_status: "active",
-    membership_expires_at: Timestamp.fromMillis(
-      base + membership.days * DAY_MS,
-    ),
-    updated_at: FieldValue.serverTimestamp(),
-  };
-}
-
-/**
- * Llama a la API de Mercado Pago con el access token del vendedor.
- *
- * @param {string} path Ruta de la API, p. ej. "/preapproval".
- * @param {object} options Método, cuerpo y clave de idempotencia.
- * @return {Promise<object>} Código HTTP y cuerpo JSON de la respuesta.
- */
-export async function mercadoPagoApi<T>(
-  path: string,
-  options: {
-    method?: "GET" | "POST" | "PUT";
-    body?: unknown;
-    idempotencyKey?: string;
-  } = {},
-): Promise<{ ok: boolean; status: number; data: T }> {
-  const headers: Record<string, string> = {
-    Authorization: `Bearer ${MP_ACCESS_TOKEN.value()}`,
-  };
-  if (options.body !== undefined) {
-    headers["Content-Type"] = "application/json";
+export function asRecord(value: unknown): Record<string, unknown> | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return null;
   }
-  if (options.idempotencyKey) {
-    headers["X-Idempotency-Key"] = options.idempotencyKey;
-  }
-
-  const response = await fetch(`https://api.mercadopago.com${path}`, {
-    method: options.method ?? "GET",
-    headers,
-    signal: AbortSignal.timeout(MP_TIMEOUT_MS),
-    body: options.body === undefined ? undefined : JSON.stringify(options.body),
-  });
-  const data = (await response.json().catch(() => ({}))) as T;
-
-  return {ok: response.ok, status: response.status, data};
+  return value as Record<string, unknown>;
 }
 
 /**
- * Convierte una fecha ISO de Mercado Pago en Timestamp.
- *
- * @param {unknown} value Fecha en texto (o nada).
- * @return {Timestamp | null} Timestamp, o null si no es válida.
+ * Valida un campo opcional de texto devuelto por Mercado Pago.
+ * @param {unknown} value Campo recibido.
+ * @return {string | undefined} Texto validado o undefined si no está presente.
  */
-export function timestampFromIso(value: unknown): Timestamp | null {
-  if (typeof value !== "string") return null;
-  const millis = Date.parse(value);
-  return Number.isNaN(millis) ? null : Timestamp.fromMillis(millis);
+export function optionalString(value: unknown): string | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value !== "string") {
+    throw new TypeError("Mercado Pago devolvió un campo de order no válido.");
+  }
+  return value;
 }
 
 /**

@@ -8,8 +8,8 @@ import {
 import {
   CorePaymentRepository,
 } from "../../core/repositories/core_payment_repository.js";
-import type {MercadoPagoOrder} from "../../shared/utils/register_order.js";
-import {getPaymentUid} from "./shared.js";
+import type {MercadoPagoOrder} from "../../shared/models/register_order.js";
+import {getPaymentUid} from "../../shared/utils/register_order.js";
 
 /**
  * Aplica el protocolo 1 y marca como pagada la inscripción, si corresponde.

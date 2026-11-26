@@ -1,6 +1,8 @@
 const assert = require("node:assert/strict");
 const {test} = require("node:test");
-const {calculateRenewalEndDate} = require("./renewal_date");
+const {
+  calculateRenewalEndDate,
+} = require("../lib/functions/add_renewal_end_date.js");
 
 const startDateMillis = Date.UTC(2026, 0, 15, 12);
 const millisecondsPerDay = 24 * 60 * 60 * 1000;

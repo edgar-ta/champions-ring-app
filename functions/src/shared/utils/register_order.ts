@@ -4,92 +4,14 @@ import {
   NOTIFICATION_URL,
   RETURN_URL,
 } from "../../core/utils/constants.js";
+import {asRecord, optionalString} from "./shared.js";
 import type {
+  CreateOrderRequest,
+  MercadoPagoOrder,
+  MercadoPagoOrderItem,
   RegisterOrderInput,
-  RegisterOrderPayer,
   RegisteredOrder,
 } from "../models/register_order.js";
-
-export interface MercadoPagoOrder {
-  id: string;
-  external_reference?: string;
-  status?: string;
-  status_detail?: string;
-  items?: MercadoPagoOrderItem[];
-}
-
-interface MercadoPagoOrderItem {
-  external_code?: string;
-}
-
-interface CreateOrderRequest {
-  type: "online";
-  processing_mode: "manual";
-  capture_mode: "automatic_async";
-  total_amount: string;
-  currency: "MXN";
-  external_reference: string;
-  description: string;
-  payer?: {
-    email: string;
-    first_name?: string;
-    last_name?: string;
-    identification?: RegisterOrderPayer["identification"];
-    phone?: RegisterOrderPayer["phone"];
-    address?: RegisterOrderPayer["address"];
-  };
-  items: {
-    external_code: string;
-    title: string;
-    description?: string;
-    category_id?: string;
-    picture_url?: string;
-    quantity: number;
-    unit_price: string;
-    type?: string;
-    warranty?: boolean;
-    unit_measure?: string;
-  }[];
-  additional_info?: Record<string, unknown>;
-  shipment?: {
-    mode: "me2" | "custom" | "not_specified";
-    local_pickup?: boolean;
-    cost?: string;
-    free_shipping?: boolean;
-    address?: {
-      zip_code?: string;
-      street_name?: string;
-      street_number?: string;
-      floor?: string;
-      apartment?: string;
-      neighborhood?: string;
-      city?: string;
-      state?: string;
-      complement?: string;
-      country?: string;
-    };
-  };
-  integration_data?: {
-    integrator_id?: string;
-    platform_id?: string;
-    corporation_id?: string;
-  };
-  config: {
-    statement_descriptor: string;
-    online: {
-      callback_url: string;
-      success_url: string;
-      pending_url: string;
-      failure_url: string;
-      auto_return: "approved";
-    };
-    payment_method?: {
-      max_installments?: number;
-      not_allowed_ids?: string[];
-      not_allowed_types?: string[];
-    };
-  };
-}
 
 /**
  * Crea una orden de Checkout Pro mediante la Orders API.
@@ -305,31 +227,6 @@ async function mercadoPagoOrdersApi(
 }
 
 /**
- * Comprueba que una respuesta JSON sea un objeto.
- * @param {unknown} value Valor JSON recibido.
- * @return {Record<string, unknown> | null} Objeto o null si no lo es.
- */
-function asRecord(value: unknown): Record<string, unknown> | null {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    return null;
-  }
-  return value as Record<string, unknown>;
-}
-
-/**
- * Valida un campo opcional de texto devuelto por Mercado Pago.
- * @param {unknown} value Campo recibido.
- * @return {string | undefined} Texto validado o undefined si no está presente.
- */
-function optionalString(value: unknown): string | undefined {
-  if (value === undefined || value === null) return undefined;
-  if (typeof value !== "string") {
-    throw new TypeError("Mercado Pago devolvió un campo de order no válido.");
-  }
-  return value;
-}
-
-/**
  * Valida la lista de artículos de una order devuelta por Mercado Pago.
  * @param {unknown} value Lista de artículos recibida.
  * @return {Array<MercadoPagoOrderItem> | undefined} Artículos validados.
@@ -351,4 +248,21 @@ function parseOrderItems(
     }
     return {external_code: optionalString(itemData.external_code)};
   });
+}
+
+/**
+ * Obtiene y valida el UID del pago asociado a la order.
+ * @param {MercadoPagoOrder} order Order vigente de Mercado Pago.
+ * @return {string} UID del pago asociado.
+ */
+export function getPaymentUid(order: MercadoPagoOrder): string {
+  const paymentUid = order.external_reference;
+  if (
+    typeof paymentUid !== "string" ||
+    paymentUid.trim() === "" ||
+    paymentUid.includes("/")
+  ) {
+    throw new TypeError("La order no incluye una referencia externa válida.");
+  }
+  return paymentUid;
 }
