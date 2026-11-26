@@ -1,16 +1,17 @@
 "use client";
 
+// @docs[ docs/dev-team/modelo-de-datos-en-firebase.md v22.1.0 ]
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { PAYMENT_TYPE_LABELS } from "@/app/core/models/payment";
-import { firestoreErrorMessage } from "@/app/core/utils/firebase-errors";
-import { formatCurrency, formatDate, formatTime, startOfToday } from "@/app/core/utils/format";
-import { EXPIRING_WINDOW_DAYS, type MemberSummary } from "@/app/features/members/models/member-summary";
-import { firebaseMemberRepository } from "@/app/features/members/repositories/firebase-member-repository";
-import { firebasePaymentRepository } from "@/app/features/payments/repositories/firebase-payment-repository";
-import type { ApprovedPayment } from "@/app/features/payments/repositories/payment-repository";
-import { DashboardSidebar } from "../components/dashboard-sidebar";
+import { PAYMENT_TYPE_LABELS } from "@/src/core/models/core_payment";
+import { firestoreErrorMessage } from "@/src/core/utils/firebase-errors";
+import { formatCurrency, formatDate, formatTime, startOfToday } from "@/src/core/utils/format";
+import { EXPIRING_WINDOW_DAYS, type MemberSummary } from "@/src/features/members/models/member-summary";
+import { firebaseMemberRepository } from "@/src/features/members/repositories/firebase-member-repository";
+import { firebasePaymentRepository } from "@/src/features/payments/repositories/firebase-payment-repository";
+import type { ApprovedPayment } from "@/src/features/payments/repositories/payment-repository";
+import { DashboardSidebar } from "../../src/shared/components/dashboard-sidebar";
 
 const icons = {
   students: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M17 4a4 4 0 0 1 0 8M22 21v-2a4 4 0 0 0-3-4",

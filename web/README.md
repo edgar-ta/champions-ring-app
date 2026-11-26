@@ -39,7 +39,8 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 La web autentica por correo y contraseña con Firebase Authentication y consulta
 `receptionists/{uid}` en la base de Firestore `default` (sin paréntesis), según el
-Modelo de Datos en Firebase v20.0.0. La cuenta debe existir en Authentication, tener
+@docs[ docs/dev-team/modelo-de-datos-en-firebase.md v22.1.0 ]
+Modelo de Datos en Firebase v22.1.0. La cuenta debe existir en Authentication, tener
 un documento en `receptionists` con el mismo `uid` (también dentro del documento) y
 `deletionDate` ausente o `null`. No se crean cuentas ni documentos durante el inicio
 de sesión.

@@ -1,7 +1,7 @@
 "use client";
 
-import { DashboardSidebar } from "../components/dashboard-sidebar";
-import { useReceptionist } from "../features/authentication/components/receptionist-session";
+import { DashboardSidebar } from "../../src/shared/components/dashboard-sidebar";
+import { useReceptionist } from "../../src/features/authentication/components/receptionist-session";
 import { useState, type FormEvent } from "react";
 
 // Ajustes del gimnasio guardados en este navegador. Los datos del recepcionista vienen de receptionists/{uid}.
@@ -34,7 +34,7 @@ export function SettingsScreen() {
   async function resetPassword() {
     setBusy(true);
     try {
-      const [{ auth }, { sendPasswordResetEmail }] = await Promise.all([import("@/app/core/firebase/firebase"), import("firebase/auth")]);
+      const [{ auth }, { sendPasswordResetEmail }] = await Promise.all([import("@/src/core/firebase/firebase"), import("firebase/auth")]);
       if (!auth.currentUser?.email) { setNotice("Inicia sesión para solicitar el cambio de contraseña."); return; }
       await sendPasswordResetEmail(auth, auth.currentUser.email);
       setNotice("Enviamos un enlace para cambiar tu contraseña al correo de tu cuenta.");

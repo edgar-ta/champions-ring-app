@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { PanelShell } from "../components/panel-shell";
-import { ReceptionistGate } from "../features/authentication/components/receptionist-session";
-import { DocumentValidationList } from "../features/document-validation/components/document-validation-list";
+import { PanelShell } from "../../src/shared/components/panel-shell";
+import { ReceptionistGate } from "../../src/features/authentication/components/receptionist-session";
+import { DocumentValidationList } from "../../src/features/document-validation/components/document-validation-list";
 
 export const metadata: Metadata = { title: "Documentos | Champions Ring" };
 

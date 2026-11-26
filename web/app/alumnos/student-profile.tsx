@@ -1,14 +1,15 @@
 "use client";
 
+// @docs[ docs/dev-team/modelo-de-datos-en-firebase.md v22.1.0 ]
 import { useState, type ReactNode } from "react";
 
-import { INSCRIPTION_FEE } from "@/app/core/constants/membership";
-import { PAYMENT_TYPE_LABELS } from "@/app/core/models/payment";
-import { formatCurrency, formatDate, formatTime, initials } from "@/app/core/utils/format";
-import { DocumentProgress, MemberDocumentChecklist, documentsOf, safeUrl } from "@/app/features/document-validation/components/member-documents";
-import type { Member } from "@/app/core/models/member";
-import { STATUS_LABELS, type MemberSummary } from "@/app/features/members/models/member-summary";
-import { VISITOR_LABELS, type VisitorKind, type VisitorSummary } from "@/app/features/members/models/visitor-summary";
+import { INSCRIPTION_FEE } from "@/src/core/constants/membership";
+import { PAYMENT_TYPE_LABELS } from "@/src/core/models/core_payment";
+import { formatCurrency, formatDate, formatTime, initials } from "@/src/core/utils/format";
+import { DocumentProgress, MemberDocumentChecklist, documentsOf, safeUrl } from "@/src/features/document-validation/components/member-documents";
+import type { CoreMember } from "@/src/core/models/core_member";
+import { STATUS_LABELS, type MemberSummary } from "@/src/features/members/models/member-summary";
+import { VISITOR_LABELS, type VisitorKind, type VisitorSummary } from "@/src/features/members/models/visitor-summary";
 
 /** Una fila de la tabla: un alumno con membresía, o una persona que vino de visita o a su clase muestra. */
 export type Row =
@@ -51,7 +52,7 @@ function Stat({ label, value, hint, tone }: { label: string; value: string; hint
   return <div className={`profile-stat ${tone ?? ""}`}><span>{label}</span><strong>{value}</strong>{hint && <small>{hint}</small>}</div>;
 }
 
-function MemberProfile({ row, onUpdated }: { row: Extract<Row, { kind: "member" }>; onUpdated: (patch: Partial<Member>) => void }) {
+function MemberProfile({ row, onUpdated }: { row: Extract<Row, { kind: "member" }>; onUpdated: (patch: Partial<CoreMember>) => void }) {
   const { member } = row;
   const record = member.record;
   const documents = documentsOf(record);
@@ -127,7 +128,7 @@ function VisitorProfile({ row }: { row: Extract<Row, { kind: VisitorKind }> }) {
 }
 
 /** Contenido del diálogo «Ver perfil»: encabezado con foto y estado, resumen, datos y documentos. */
-export function StudentProfile({ row, onClose, onUpdated }: { row: Row; onClose: () => void; onUpdated: (patch: Partial<Member>) => void }) {
+export function StudentProfile({ row, onClose, onUpdated }: { row: Row; onClose: () => void; onUpdated: (patch: Partial<CoreMember>) => void }) {
   const eyebrow = row.kind === "member" ? "Perfil del alumno" : row.kind === "visit" ? "Perfil del visitante" : "Perfil del prospecto";
   const status = row.kind === "member"
     ? { label: STATUS_LABELS[row.member.status], className: row.member.status }

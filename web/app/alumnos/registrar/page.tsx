@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { PanelShell } from "../../components/panel-shell";
-import { ReceptionistGate } from "../../features/authentication/components/receptionist-session";
-import { RegistrationWizard } from "../../features/signup/components/registration-wizard";
+import { PanelShell } from "../../../src/shared/components/panel-shell";
+import { ReceptionistGate } from "../../../src/features/authentication/components/receptionist-session";
+import { RegistrationWizard } from "../../../src/features/signup/components/registration-wizard";
 
 export const metadata: Metadata = { title: "Registrar alumno | Champions Ring" };
 

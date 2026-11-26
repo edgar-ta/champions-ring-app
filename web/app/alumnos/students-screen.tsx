@@ -1,16 +1,17 @@
 "use client";
 
+// @docs[ docs/dev-team/modelo-de-datos-en-firebase.md v22.1.0 ]
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
-import { hasPendingDocuments, type Member } from "@/app/core/models/member";
-import { firestoreErrorMessage } from "@/app/core/utils/firebase-errors";
-import { formatDate } from "@/app/core/utils/format";
-import { STATUS_LABELS, type MemberSummary, type MembershipStatus } from "@/app/features/members/models/member-summary";
-import { VISITOR_LABELS, type VisitorKind, type VisitorSummary } from "@/app/features/members/models/visitor-summary";
-import { firebaseMemberRepository } from "@/app/features/members/repositories/firebase-member-repository";
-import { DashboardSidebar } from "../components/dashboard-sidebar";
-import { documentsOf } from "@/app/features/document-validation/components/member-documents";
+import { hasPendingDocuments, type CoreMember } from "@/src/core/models/core_member";
+import { firestoreErrorMessage } from "@/src/core/utils/firebase-errors";
+import { formatDate } from "@/src/core/utils/format";
+import { STATUS_LABELS, type MemberSummary, type MembershipStatus } from "@/src/features/members/models/member-summary";
+import { VISITOR_LABELS, type VisitorKind, type VisitorSummary } from "@/src/features/members/models/visitor-summary";
+import { firebaseMemberRepository } from "@/src/features/members/repositories/firebase-member-repository";
+import { DashboardSidebar } from "../../src/shared/components/dashboard-sidebar";
+import { documentsOf } from "@/src/features/document-validation/components/member-documents";
 import { Avatar, StudentProfile, formatDateTime, isMinor, type Row } from "./student-profile";
 
 const filters = ["Todos", "Activos", "Por vencer", "Vencidos", "Sin membresía", "Docs. pendientes", "Menores", "Visitas", "Clase muestra"] as const;
@@ -87,7 +88,7 @@ export function StudentsScreen() {
   const selected = rows.find(row => rowKey(row) === selectedKey) ?? null;
 
   /** Al validar o rechazar un documento desde el perfil, se actualiza la fila sin volver a consultar todo. */
-  function updateMember(uid: string, patch: Partial<Member>) {
+  function updateMember(uid: string, patch: Partial<CoreMember>) {
     setState(current => current.status !== "ready" ? current : {
       status: "ready",
       rows: current.rows.map(row => {
