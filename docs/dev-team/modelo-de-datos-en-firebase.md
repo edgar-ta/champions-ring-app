@@ -140,5 +140,9 @@ purchases
         individualPrice: number
 ```
 
-Cada cobro automático aprobado se registra también en `payments` con
-`source: "subscription"` y el id `mp_subscription_{authorizedPaymentId}`.
+## Mantenimiento de referencias internas
+
+Cada vez que se actualice este documento, se deben buscar en el repositorio los archivos
+que contengan un doc tag con el formato
+`@docs[ docs/dev-team/modelo-de-datos-en-firebase.md v{version} ]` y actualizar
+las referencias que correspondan a la nueva versión.

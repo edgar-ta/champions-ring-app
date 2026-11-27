@@ -1,6 +1,7 @@
 import 'package:champions_ring_app/core/models/core_date.dart' show CoreDate;
 import 'package:champions_ring_app/core/utils/firestore_entity.dart';
 
+/// @docs[ docs/dev-team/modelo-de-datos-en-firebase.md v22.1.0 ]
 class CoreClient extends FirestoreEntity {
   @override
   final String uid;

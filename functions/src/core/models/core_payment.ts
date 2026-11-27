@@ -47,7 +47,10 @@ export const CORE_PAYMENT_ISSUING_ENTITIES = [
 export type CorePaymentIssuingEntity =
   typeof CORE_PAYMENT_ISSUING_ENTITIES[number];
 
-/** Documento de pago que cumple el esquema de la colección payments. */
+/**
+ * @docs[ docs/dev-team/modelo-de-datos-en-firebase.md v22.1.0 ]
+ * Documento de pago que cumple el esquema de la colección payments.
+ */
 export class CorePayment extends FirestoreEntity {
   /** Crea un pago. */
   constructor(

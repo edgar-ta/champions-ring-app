@@ -12,7 +12,10 @@ import {
   readUid,
 } from "../utils/firestore_values.js";
 
-/** Renovación de membresía almacenada en renewals dentro de members. */
+/**
+ * @docs[ docs/dev-team/modelo-de-datos-en-firebase.md v22.1.0 ]
+ * Renovación de membresía almacenada en renewals dentro de members.
+ */
 export class CoreRenewal extends FirestoreEntity {
   /** Crea una renovación de membresía. */
   constructor(

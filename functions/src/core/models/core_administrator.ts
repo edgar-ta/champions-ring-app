@@ -8,7 +8,10 @@ import {
   readUid,
 } from "../utils/firestore_values.js";
 
-/** Perfil de administrador almacenado en la colección administrators. */
+/**
+ * @docs[ docs/dev-team/modelo-de-datos-en-firebase.md v22.1.0 ]
+ * Perfil de administrador almacenado en la colección administrators.
+ */
 export class CoreAdministrator extends FirestoreEntity {
   /** Crea un perfil de administrador. */
   constructor(

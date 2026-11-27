@@ -15,7 +15,10 @@ export const CORE_MEMBERSHIP_PLAN_DURATIONS = ["1d", "1w", "1m"] as const;
 export type CoreMembershipPlanDuration =
   typeof CORE_MEMBERSHIP_PLAN_DURATIONS[number];
 
-/** Plan de membresía almacenado en la colección membership_plans. */
+/**
+ * @docs[ docs/dev-team/modelo-de-datos-en-firebase.md v22.1.0 ]
+ * Plan de membresía almacenado en la colección membership_plans.
+ */
 export class CoreMembershipPlan extends FirestoreEntity {
   /** Crea un plan de membresía. */
   constructor(

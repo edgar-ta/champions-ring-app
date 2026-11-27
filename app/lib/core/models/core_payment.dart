@@ -2,6 +2,7 @@ import 'package:champions_ring_app/core/models/core_date.dart';
 import 'package:champions_ring_app/core/utils/firestore_entity.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// @docs[ docs/dev-team/modelo-de-datos-en-firebase.md v22.1.0 ]
 enum CorePaymentType {
   cash('cash'),
   directTransfer('direct-transfer'),
@@ -12,6 +13,7 @@ enum CorePaymentType {
   const CorePaymentType(this.serialization);
 }
 
+/// @docs[ docs/dev-team/modelo-de-datos-en-firebase.md v22.1.0 ]
 enum CorePaymentCurrency {
   mxn('MXN'),
   usd('USD');
@@ -21,15 +23,67 @@ enum CorePaymentCurrency {
   const CorePaymentCurrency(this.serialization);
 }
 
+/// @docs[ docs/dev-team/modelo-de-datos-en-firebase.md v22.1.0 ]
 enum CoreMercadoPagoStatus {
   approved('approved'),
-  rejected('rejected');
+  rejected('rejected'),
+  processing('processing'),
+  canceled('canceled'),
+  refunded('refunded');
 
   final String serialization;
 
   const CoreMercadoPagoStatus(this.serialization);
 }
 
+/// @docs[ docs/dev-team/modelo-de-datos-en-firebase.md v22.1.0 ]
+enum CoreMercadoPagoRejectionDetailEnumeration {
+  highRisk('approved'),
+  rejectedByIssuer('rejected_by_issuer'),
+  insufficientAmount('insufficient_amount'),
+  invalidCardToken('invalid_card_token'),
+  processingError('processing_error'),
+  other('other');
+
+  final String serialization;
+
+  const CoreMercadoPagoRejectionDetailEnumeration(this.serialization);
+}
+
+/// @docs[ docs/dev-team/modelo-de-datos-en-firebase.md v22.1.0 ]
+sealed class CoreMercadoPagoRejectionDetail {
+  bool get isEnum;
+  String get serialization;
+}
+
+/// @docs[ docs/dev-team/modelo-de-datos-en-firebase.md v22.1.0 ]
+class CoreMercadoPagoRejectionDetailEnumerated
+    implements CoreMercadoPagoRejectionDetail {
+  final CoreMercadoPagoRejectionDetailEnumeration _reason;
+  CoreMercadoPagoRejectionDetailEnumerated(this._reason);
+
+  @override
+  bool get isEnum => true;
+
+  @override
+  String get serialization => _reason.serialization;
+}
+
+/// @docs[ docs/dev-team/modelo-de-datos-en-firebase.md v22.1.0 ]
+class CoreMercadoPagoRejectionDetailFree
+    implements CoreMercadoPagoRejectionDetail {
+  final String _reason;
+
+  CoreMercadoPagoRejectionDetailFree(this._reason);
+
+  @override
+  bool get isEnum => false;
+
+  @override
+  String get serialization => _reason;
+}
+
+/// @docs[ docs/dev-team/modelo-de-datos-en-firebase.md v22.1.0 ]
 enum CorePaymentIssuingEntity {
   bbva('bbva', 'BBVA'),
   santander('santander', 'Santander'),
@@ -43,6 +97,7 @@ enum CorePaymentIssuingEntity {
   const CorePaymentIssuingEntity(this.serialization, this.name);
 }
 
+/// @docs[ docs/dev-team/modelo-de-datos-en-firebase.md v22.1.0 ]
 class CorePayment extends FirestoreEntity {
   @override
   final String uid;
@@ -111,8 +166,7 @@ class CorePayment extends FirestoreEntity {
 
       // Transferencia bancaria
       if (referenceId != null) 'referenceId': referenceId,
-      if (issuingEntity != null)
-        'issuingEntity': issuingEntity!.serialization,
+      if (issuingEntity != null) 'issuingEntity': issuingEntity!.serialization,
       if (issuingEntityName != null) 'issuingEntityName': issuingEntityName,
 
       // Efectivo y transferencia bancaria

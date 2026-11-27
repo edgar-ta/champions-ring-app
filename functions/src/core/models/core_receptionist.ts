@@ -8,7 +8,10 @@ import {
   readUid,
 } from "../utils/firestore_values.js";
 
-/** Perfil de recepcionista almacenado en la colección receptionists. */
+/**
+ * @docs[ docs/dev-team/modelo-de-datos-en-firebase.md v22.1.0 ]
+ * Perfil de recepcionista almacenado en la colección receptionists.
+ */
 export class CoreReceptionist extends FirestoreEntity {
   /** Crea un perfil de recepcionista. */
   constructor(

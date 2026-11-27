@@ -15,7 +15,10 @@ import {
   readUid,
 } from "../utils/firestore_values.js";
 
-/** Perfil de miembro almacenado en la colección members. */
+/**
+ * @docs[ docs/dev-team/modelo-de-datos-en-firebase.md v22.1.0 ]
+ * Perfil de miembro almacenado en la colección members.
+ */
 export class CoreMember extends FirestoreEntity {
   /** Crea un perfil de miembro. */
   constructor(

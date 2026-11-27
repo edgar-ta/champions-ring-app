@@ -1,6 +1,7 @@
 import 'package:champions_ring_app/core/models/core_date.dart';
 import 'package:champions_ring_app/core/utils/firestore_entity.dart';
 
+/// @docs[ docs/dev-team/modelo-de-datos-en-firebase.md v22.1.0 ]
 enum CoreMembershipPlanDuration {
   oneDay('1d'),
   oneWeek('1w'),
@@ -11,6 +12,7 @@ enum CoreMembershipPlanDuration {
   const CoreMembershipPlanDuration(this.serialization);
 }
 
+/// @docs[ docs/dev-team/modelo-de-datos-en-firebase.md v22.1.0 ]
 class CoreMembershipPlan extends FirestoreEntity {
   @override
   final String uid;

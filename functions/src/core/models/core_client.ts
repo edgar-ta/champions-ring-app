@@ -8,7 +8,10 @@ import {
   readUid,
 } from "../utils/firestore_values.js";
 
-/** Perfil de cliente almacenado en la colección clients. */
+/**
+ * @docs[ docs/dev-team/modelo-de-datos-en-firebase.md v22.1.0 ]
+ * Perfil de cliente almacenado en la colección clients.
+ */
 export class CoreClient extends FirestoreEntity {
   /** Crea un perfil de cliente. */
   constructor(

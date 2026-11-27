@@ -9,7 +9,7 @@ Debe haber un apartado para que el recepcionista pueda registrar
 los datos personales de un usuario prospecto.
 
 El recepcionista ingresa al apartado y ve una input en la que puede llenar
-nombre y apellidos y correo del usuario prospecto.
+nombre, apellidos y correo del usuario prospecto.
 
 Al dar clic al formulario, el sistema debe realizar el siguiente proceso:
 - Buscar al usuario en el sistema

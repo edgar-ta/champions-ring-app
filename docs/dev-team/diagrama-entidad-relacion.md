@@ -1,5 +1,7 @@
 # Diagrama Entidad Relación del Modelo de Datos en Firebase
 
+@docs[ docs/dev-team/modelo-de-datos-en-firebase.md v22.1.0 ]
+
 Versión 1.0.0
 
 ## Clasificación de Cambios
